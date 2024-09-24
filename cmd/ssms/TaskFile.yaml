@@ -1,0 +1,14 @@
+version: '3'
+
+tasks:
+  start-sql-server:
+    silent: true
+    cmds:
+      - echo "starting sql server service..."
+      - cmd: wscript start-service-by-admin.vbs
+      - echo "sql server service started successfully!"
+    aliases:
+      - ssms
+      - sql
+      - start-sql
+    desc: "starts sql server service"

@@ -1,0 +1,1 @@
+start "Redis-cli" powershell.exe "task redis"

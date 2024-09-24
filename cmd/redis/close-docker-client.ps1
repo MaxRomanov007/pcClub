@@ -1,0 +1,1 @@
+taskkill /fi "imagename eq docker desktop.exe" /fi "status eq running"
