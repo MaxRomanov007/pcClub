@@ -1,0 +1,31 @@
+version: '3'
+
+tasks:
+  start-redis:
+    silent: true
+    vars:
+      port: '{{default 6379 .port}}'
+    cmds:
+      - cmd: start-docker.bat
+        ignore_error: true
+      - cmd: powershell -file close-docker-client.ps1
+        ignore_error: true
+      - cmd: start-redis-container.bat
+        ignore_error: true
+      - echo "Redis started successfully!"
+      - echo ""
+      - docker exec -it redis redis-cli
+      - echo "stoping redis..."
+      - docker stop redis
+      - echo "Redis stopped!"
+    aliases:
+      - redis
+
+  redis-window:
+    silent: true
+    cmds:
+      - echo "starting redis in new window..."
+      - cmd: redis-task-cli.bat
+        ignore_error: true
+      - echo "Redis opened in new window!"
+    desc: "starts redis cli in new window"
