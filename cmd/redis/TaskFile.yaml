@@ -15,7 +15,7 @@ tasks:
       - echo "Redis started successfully!"
       - echo ""
       - docker exec -it redis redis-cli
-      - echo "stoping redis..."
+      - echo "stopping redis..."
       - docker stop redis
       - echo "Redis stopped!"
     aliases:

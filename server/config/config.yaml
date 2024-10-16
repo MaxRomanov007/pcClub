@@ -1,22 +1,39 @@
 env: "local" #local, dev, prod
 database:
   sql_server:
-
+    username: "pitpm"
+    password: "12345678"
+    hostname: "(local)"
+    port: 1433
+    database: "pitpm_kursach"
+    encrypt: true
+    trust_server_certificate: true
+    app_name: "pitpm_kursach"
   redis:
-
+    address: "localhost:6379"
+    password: ""
+    db: 0
+    default_ttl: 15m
 http_server:
   address: "localhost:8080"
   timeout: 4s
   idle_timeout: 60s
 images:
-  psc:
+  pcs:
     path: "D:/Лабы/3 курс/ПРОЕКТ/Веб/images/pcs"
   dishes:
     path: "D:/Лабы/3 курс/ПРОЕКТ/Веб/images/dishes"
-jwt:
+auth:
+  path: "/"
   access:
     secret: "Better"
-    ttl: 15m
+    ttl: 1h
+    is_black_list: true
+    redis_black_list_name: "access_black_list_exp"
   refresh:
     secret: "The best!"
-    ttl: 5d
+    ttl: 120h
+    redis_black_list_name: "refresh_black_list_exp"
+    cookie_name: "refresh_token"
+user:
+  admin_role_name: "admin"
