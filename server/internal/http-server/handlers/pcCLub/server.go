@@ -119,6 +119,17 @@ type PcService interface {
 		place int,
 	) (err error)
 
+	UpdatePcType(
+		ctx context.Context,
+		typeId int64,
+		name string,
+		description string,
+		processor *models.ProcessorData,
+		videoCard *models.VideoCardData,
+		monitor *models.MonitorData,
+		ram *models.RamData,
+	) (err error)
+
 	DeletePcType(
 		ctx context.Context,
 		typeId int64,

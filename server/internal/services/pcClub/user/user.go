@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"server/internal/models"
-	"server/internal/storage/sqlServer"
+	"server/internal/storage/ssms"
 )
 
 func (s *Service) User(
@@ -16,7 +16,7 @@ func (s *Service) User(
 	const op = "services.pcClub.user.User"
 
 	user, err := s.userProvider.User(ctx, uid)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return models.UserData{}, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 	if err != nil {
@@ -33,7 +33,7 @@ func (s *Service) UserByEmail(
 	const op = "services.pcClub.user.UserByEmail"
 
 	user, err := s.userProvider.UserByEmail(ctx, email)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return models.User{}, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 	if err != nil {
@@ -61,7 +61,7 @@ func (s *Service) SaveUser(
 			Email:    email,
 			Password: passHash,
 		})
-	if errors.Is(err, sqlServer.ErrAlreadyExists) {
+	if errors.Is(err, ssms.ErrAlreadyExists) {
 		return 0, fmt.Errorf("%s: %w", op, ErrUserAlreadyExists)
 	}
 	if err != nil {
@@ -79,7 +79,7 @@ func (s *Service) Login(
 	const op = "services.pcClub.user.Email"
 
 	user, err := s.userProvider.UserByEmail(ctx, email)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return 0, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 	if err != nil {
@@ -104,7 +104,7 @@ func (s *Service) DeleteUser(
 	const op = "services.pcClub.user.DeleteUser"
 
 	err := s.userOwner.DeleteUser(ctx, uid)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 	if err != nil {
@@ -121,7 +121,7 @@ func (s *Service) IsAdmin(
 	const op = "services.pcClub.user.IsAdmin"
 
 	role, err := s.userProvider.UserRole(ctx, uid)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return fmt.Errorf("%s: %w", op, ErrUserNotFound)
 	}
 	if err != nil {

@@ -1,4 +1,4 @@
-package sqlServer
+package ssms
 
 import (
 	"context"
@@ -10,22 +10,24 @@ import (
 )
 
 type pcTypeFlat struct {
-	TypeID            int64  `db:"type_id"`
-	TypeName          string `db:"type"`
-	ProcessorModel    string `db:"processor_model"`
-	ProcessorProducer string `db:"processor_producer"`
-	VideoCardModel    string `db:"video_card_model"`
-	VideoCardProducer string `db:"video_card_producer"`
-	MonitorModel      string `db:"monitor_model"`
-	MonitorProducer   string `db:"monitor_producer"`
-	RamType           string `db:"ram_type"`
-	RamCapacity       int    `db:"ram_capacity"`
+	TypeID            int64            `db:"type_id"`
+	TypeName          string           `db:"type"`
+	Description       sql.Null[string] `db:"description"`
+	ProcessorModel    string           `db:"processor_model"`
+	ProcessorProducer string           `db:"processor_producer"`
+	VideoCardModel    string           `db:"video_card_model"`
+	VideoCardProducer string           `db:"video_card_producer"`
+	MonitorModel      string           `db:"monitor_model"`
+	MonitorProducer   string           `db:"monitor_producer"`
+	RamType           string           `db:"ram_type"`
+	RamCapacity       int              `db:"ram_capacity"`
 }
 
 func (pcType pcTypeFlat) Parse() models.PcTypeData {
 	return models.PcTypeData{
-		TypeID:   pcType.TypeID,
-		TypeName: pcType.TypeName,
+		TypeID:      pcType.TypeID,
+		TypeName:    pcType.TypeName,
+		Description: pcType.Description.V,
 		Processor: &models.ProcessorData{
 			Model:    pcType.ProcessorModel,
 			Producer: pcType.ProcessorProducer,
@@ -49,6 +51,7 @@ func squirrelSelectPcTypeFlat() squirrel.SelectBuilder {
 	return squirrel.Select(
 		"pc_types.pc_type_id AS type_id",
 		"pc_types.name AS type",
+		"pc_types.description AS description",
 		"processors.model AS processor_model",
 		"processor_producers.name AS processor_producer",
 		"video_cards.model AS video_card_model",
@@ -74,7 +77,7 @@ func (s *Storage) Pcs(
 	typeId int64,
 	isAvailable bool,
 ) ([]models.PcData, error) {
-	const op = "storage.sqlServer.pc.Pc"
+	const op = "storage.ssms.pc.Pc"
 
 	squirrelStmt := squirrel.Select(
 		"pc.pc_id",
@@ -116,7 +119,7 @@ func (s *Storage) PcTypes(
 	limit int64,
 	offset int64,
 ) ([]models.PcTypeData, error) {
-	const op = "storage.sqlServer.pc.pcTypes"
+	const op = "storage.ssms.pc.pcTypes"
 
 	squirrelStmt := squirrelSelectPcTypeFlat()
 
@@ -134,6 +137,7 @@ func (s *Storage) PcTypes(
 		squirrelStmt = squirrel.Select(
 			"type_id",
 			"type",
+			"description",
 			"processor_model",
 			"processor_producer",
 			"monitor_model",

@@ -7,7 +7,7 @@ import (
 	"server/internal/config"
 	"server/internal/lib/jwt"
 	"server/internal/storage/redis"
-	"server/internal/storage/sqlServer"
+	"server/internal/storage/ssms"
 	"strconv"
 )
 
@@ -78,7 +78,7 @@ func (s *Service) Refresh(
 	banedTokenExpirationTimeString, err := s.redisProvider.StringValue(ctx, fmt.Sprintf("%s:%d", s.cfg.Refresh.RedisBlackListName, claims.UID))
 	if errors.Is(err, redis.ErrNotFound) {
 		err := s.versionOwner.UpdateRefreshVersion(ctx, claims.UID, claims.Version+1)
-		if errors.Is(err, sqlServer.ErrNotFound) {
+		if errors.Is(err, ssms.ErrNotFound) {
 			return "", "", fmt.Errorf("%s: user to update version not found: %w", op, ErrUserNotFound)
 		}
 		if err != nil {
@@ -107,7 +107,7 @@ func (s *Service) Refresh(
 	}
 
 	version, err := s.versionProvider.RefreshVersion(ctx, claims.UID)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return "", "", fmt.Errorf("%s: users version of refresh token not found: %w", op, ErrUserNotFound)
 	}
 	if err != nil {
@@ -119,7 +119,7 @@ func (s *Service) Refresh(
 	}
 
 	err = s.versionOwner.UpdateRefreshVersion(ctx, claims.UID, claims.Version+1)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return "", "", fmt.Errorf("%s: user to update version not found: %w", op, ErrUserNotFound)
 	}
 	if err != nil {
@@ -141,7 +141,7 @@ func (s *Service) Tokens(
 	const op = "services.pcClub.auth.Tokens"
 
 	version, err := s.versionProvider.RefreshVersion(ctx, uid)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return "", "", fmt.Errorf("%s: users version of refresh token not found: %w", op, ErrUserNotFound)
 	}
 	if err != nil {
@@ -149,7 +149,7 @@ func (s *Service) Tokens(
 	}
 
 	err = s.versionOwner.UpdateRefreshVersion(ctx, uid, version+1)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return "", "", fmt.Errorf("%s: user to update version not found: %w", op, ErrUserNotFound)
 	}
 	if err != nil {

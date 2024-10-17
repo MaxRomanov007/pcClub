@@ -1,4 +1,4 @@
-package sqlServer
+package ssms
 
 import (
 	"context"
@@ -11,7 +11,7 @@ func (s *Storage) User(
 	ctx context.Context,
 	uid int64,
 ) (models.UserData, error) {
-	const op = "storage.sqlServer.user.User"
+	const op = "storage.ssms.user.User"
 
 	stmt, args, err := squirrel.Select("user_id", "email", "balance").
 		From("users").
@@ -37,7 +37,7 @@ func (s *Storage) UserByEmail(
 	ctx context.Context,
 	email string,
 ) (models.User, error) {
-	const op = "storage.sqlServer.user.UserByEmail"
+	const op = "storage.ssms.user.UserByEmail"
 
 	stmt, args, err := squirrel.Select("*").
 		From("users").
@@ -63,7 +63,7 @@ func (s *Storage) SaveUser(
 	ctx context.Context,
 	user models.User,
 ) (int64, error) {
-	const op = "storage.sqlServer.user.SaveUser"
+	const op = "storage.ssms.user.SaveUser"
 
 	stmt, args, err := squirrel.Insert("users").
 		Columns("email", "password").
@@ -102,7 +102,7 @@ func (s *Storage) DeleteUser(
 	ctx context.Context,
 	uid int64,
 ) error {
-	const op = "storage.sqlServer.user.DeleteUser"
+	const op = "storage.ssms.user.DeleteUser"
 
 	stmt, args, err := squirrel.
 		Delete("users").
@@ -128,7 +128,7 @@ func (s *Storage) RefreshVersion(
 	ctx context.Context,
 	uid int64,
 ) (int64, error) {
-	const op = "storage.sqlServer.user.RefreshVersion"
+	const op = "storage.ssms.user.RefreshVersion"
 
 	stmt, args, err := squirrel.Select("refresh_token_version").
 		From("users").
@@ -155,7 +155,7 @@ func (s *Storage) UpdateRefreshVersion(
 	uid int64,
 	version int64,
 ) error {
-	const op = "storage.sqlServer.user.UpdateRefreshVersion"
+	const op = "storage.ssms.user.UpdateRefreshVersion"
 
 	stmt, args, err := squirrel.Update("users").
 		Set("refresh_token_version", version).
@@ -181,7 +181,7 @@ func (s *Storage) UserRole(
 	ctx context.Context,
 	uid int64,
 ) (string, error) {
-	const op = "storage.sqlServer.user.UserRole"
+	const op = "storage.ssms.user.UserRole"
 
 	stmt, args, err := squirrel.
 		Select("user_roles.name").
