@@ -2,9 +2,7 @@ package pcCLub
 
 import (
 	"errors"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"log/slog"
 	"net/http"
 	"server/internal/lib/api/response"
 	"server/internal/lib/logger/sl"
@@ -28,14 +26,15 @@ type SavePcRequest struct {
 	Place  int   `json:"place" validate:"required,numeric"`
 }
 
+type DeletePcTypeRequest struct {
+	PcTypeId int64 `json:"pc_type_id" validate:"required,numeric"`
+}
+
 func (a *API) SavePcType() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.pcClub.pc.SavePcType"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		if !a.authorizeAdmin(w, r, log) {
 			return
@@ -55,7 +54,7 @@ func (a *API) SavePcType() http.HandlerFunc {
 			req.Monitor,
 			req.Ram,
 		); err != nil {
-			if errors.Is(err, pc.ErrPcTypeAlreadyExists) {
+			if errors.Is(err, pc.ErrAlreadyExists) {
 				log.Warn("pc type already exists", sl.Err(err))
 				response.AlreadyExists(w, "pc type already exists")
 				return
@@ -74,10 +73,7 @@ func (a *API) SavePc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.pcClub.pc.SavePc"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		if !a.authorizeAdmin(w, r, log) {
 			return
@@ -95,7 +91,7 @@ func (a *API) SavePc() http.HandlerFunc {
 			req.Row,
 			req.Place,
 		)
-		if errors.Is(err, pc.ErrPcAlreadyExists) {
+		if errors.Is(err, pc.ErrAlreadyExists) {
 			log.Warn("pc already exists", sl.Err(err))
 			response.AlreadyExists(w, "pc already exists")
 			return
@@ -107,5 +103,34 @@ func (a *API) SavePc() http.HandlerFunc {
 		}
 
 		render.JSON(w, r, "saved success")
+	}
+}
+
+func (a *API) DeletePcType() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.pcClub.pc.DeletePcType"
+
+		log := a.log(op, r)
+
+		if !a.authorizeAdmin(w, r, log) {
+			return
+		}
+
+		var req DeletePcTypeRequest
+		if !a.decodeAndValidateRequest(w, r, log, &req) {
+			return
+		}
+
+		err := a.PcService.DeletePcType(r.Context(), req.PcTypeId)
+		if errors.Is(err, pc.ErrNotFound) {
+			log.Warn("pc type not found", sl.Err(err))
+			response.NotFound(w, "pc type not found")
+			return
+		}
+		if err != nil {
+			log.Error("failed to delete pc type", sl.Err(err))
+		}
+
+		render.JSON(w, r, "deleted success")
 	}
 }

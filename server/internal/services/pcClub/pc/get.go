@@ -18,7 +18,7 @@ func (s *Service) Pcs(
 
 	pcs, err := s.provider.Pcs(ctx, typeId, isAvailable)
 	if errors.Is(err, sqlServer.ErrNotFound) {
-		return nil, fmt.Errorf("%s: %w", op, ErrPcNotFound)
+		return nil, fmt.Errorf("%s: %w", op, ErrNotFound)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to get pcs: %w", op, err)
@@ -85,7 +85,7 @@ func (s *Service) PcType(
 
 	pcType, err = s.provider.PcType(ctx, typeId)
 	if errors.Is(err, sqlServer.ErrNotFound) {
-		return models.PcTypeData{}, fmt.Errorf("%s: %w", op, ErrTypeNotFound)
+		return models.PcTypeData{}, fmt.Errorf("%s: %w", op, ErrNotFound)
 	}
 	if err != nil {
 		return models.PcTypeData{}, fmt.Errorf("%s: failed to get pc type from sql: %w", op, err)
@@ -101,60 +101,4 @@ func (s *Service) PcType(
 	}
 
 	return pcType, nil
-}
-
-func (s *Service) SavePcType(
-	ctx context.Context,
-	name string,
-	description string,
-	processor *models.ProcessorData,
-	videoCard *models.VideoCardData,
-	monitor *models.MonitorData,
-	ram *models.RamData,
-) error {
-	const op = "services.pcClub.pc.SavePcType"
-
-	err := s.owner.SavePcType(
-		ctx,
-		name,
-		description,
-		processor,
-		videoCard,
-		monitor,
-		ram,
-	)
-	if errors.Is(err, sqlServer.ErrAlreadyExists) {
-		return fmt.Errorf("%s: %w", op, ErrPcTypeAlreadyExists)
-	}
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	return nil
-}
-
-func (s *Service) SavePc(
-	ctx context.Context,
-	typeId int64,
-	roomId int64,
-	row int,
-	place int,
-) error {
-	const op = "services.pcClub.pc.SavePc"
-
-	err := s.owner.SavePc(
-		ctx,
-		typeId,
-		roomId,
-		row,
-		place,
-	)
-	if errors.Is(err, sqlServer.ErrAlreadyExists) {
-		return fmt.Errorf("%s: %w", op, ErrPcAlreadyExists)
-	}
-	if err != nil {
-		return fmt.Errorf("%s: failed to save pc: %w", op, err)
-	}
-
-	return nil
 }

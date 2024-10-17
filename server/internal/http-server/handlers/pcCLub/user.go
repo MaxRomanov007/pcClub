@@ -2,9 +2,7 @@ package pcCLub
 
 import (
 	"errors"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"log/slog"
 	"net/http"
 	"server/internal/lib/api/response"
 	"server/internal/lib/logger/sl"
@@ -36,10 +34,7 @@ func (a *API) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.user.SaveUser"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		var req RegisterRequest
 		if !a.decodeAndValidateRequest(w, r, log, &req) {
@@ -84,10 +79,7 @@ func (a *API) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.user.SaveUser"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		var req LoginRequest
 		if !a.decodeAndValidateRequest(w, r, log, &req) {
@@ -132,10 +124,7 @@ func (a *API) Refresh() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.user.Refresh"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		refresh := a.getRefreshToken(w, r, log)
 		if refresh == "" {
@@ -168,10 +157,7 @@ func (a *API) User() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.user.Refresh"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		uid := a.authorizeRequest(w, r, log)
 		if uid == 0 {
@@ -198,10 +184,7 @@ func (a *API) Logout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.user.Logout"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		access := a.getAccessToken(w, r, log)
 		if access == "" {
