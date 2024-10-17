@@ -3,10 +3,8 @@ package pcCLub
 import (
 	"errors"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator"
-	"log/slog"
 	"net/http"
 	"server/internal/lib/api/response"
 	"server/internal/lib/logger/sl"
@@ -32,10 +30,7 @@ func (a *API) Pcs() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.pcClub.pc"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		req := &PcsRequest{
 			typeId:      r.URL.Query().Get("type_id"),
@@ -76,14 +71,9 @@ func (a *API) Pcs() http.HandlerFunc {
 		}
 
 		pcs, err := a.PcService.Pcs(r.Context(), typeId, isFree)
-		if errors.Is(err, pc.ErrTypeNotFound) {
+		if errors.Is(err, pc.ErrNotFound) {
 			log.Warn("pc type not found", sl.Err(err))
 			response.NotFound(w, "pc type not found")
-			return
-		}
-		if errors.Is(err, pc.ErrPcNotFound) {
-			log.Warn("pc not found")
-			response.NotFound(w, "pc not found")
 			return
 		}
 		if err != nil {
@@ -100,10 +90,7 @@ func (a *API) PcTypes() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.pcClub.pc.PcTypes"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		req := &PcTypesRequest{
 			limit:  r.URL.Query().Get("limit"),
@@ -158,10 +145,7 @@ func (a *API) PcType() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.pcClub.pc.PcType"
 
-		log := a.Log.With(
-			slog.String("operation", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
+		log := a.log(op, r)
 
 		req := &PcTypeRequest{
 			typeId: chi.URLParam(r, "type_id"),
@@ -188,7 +172,7 @@ func (a *API) PcType() http.HandlerFunc {
 		}
 
 		pcType, err := a.PcService.PcType(r.Context(), typeId)
-		if errors.Is(err, pc.ErrTypeNotFound) {
+		if errors.Is(err, pc.ErrNotFound) {
 			log.Warn("pc type not found", sl.Err(err))
 			response.NotFound(w, "pc type not found")
 			return

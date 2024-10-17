@@ -60,11 +60,11 @@ type owner interface {
 		ram *models.RamData,
 	) (err error)
 
-	//DeletePc(
-	//	ctx context.Context,
-	//	id int64,
-	//) (err error)
-	//
+	DeletePcType(
+		ctx context.Context,
+		typeId int64,
+	) (err error)
+
 	//UpdatePc(
 	//	ctx context.Context,
 	//	id int64,
@@ -80,10 +80,8 @@ type Service struct {
 }
 
 var (
-	ErrTypeNotFound        = errors.New("pc type not found")
-	ErrPcNotFound          = errors.New("pc not found")
-	ErrPcTypeAlreadyExists = errors.New("pc type already exists")
-	ErrPcAlreadyExists     = errors.New("pc already exists")
+	ErrNotFound      = errors.New("not found")
+	ErrAlreadyExists = errors.New("pc type already exists")
 )
 
 func New(redisProvider redisProvider, redisOwner redisOwner, provider provider, owner owner) *Service {

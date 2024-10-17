@@ -3,6 +3,7 @@ package pcCLub
 import (
 	"context"
 	"errors"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator"
 	"log/slog"
@@ -116,6 +117,11 @@ type PcService interface {
 		roomId int64,
 		row int,
 		place int,
+	) (err error)
+
+	DeletePcType(
+		ctx context.Context,
+		typeId int64,
 	) (err error)
 }
 
@@ -252,4 +258,11 @@ func (a *API) authorizeAdmin(w http.ResponseWriter, r *http.Request, log *slog.L
 	}
 
 	return true
+}
+
+func (a *API) log(op string, r *http.Request) *slog.Logger {
+	return a.Log.With(
+		slog.String("operation", op),
+		slog.String("request_id", middleware.GetReqID(r.Context())),
+	)
 }
