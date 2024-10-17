@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"server/internal/models"
 	"server/internal/storage/redis"
-	"server/internal/storage/sqlServer"
+	"server/internal/storage/ssms"
 )
 
 func (s *Service) Pcs(
@@ -17,7 +17,7 @@ func (s *Service) Pcs(
 	const op = "services.pcClub.pc.pcs"
 
 	pcs, err := s.provider.Pcs(ctx, typeId, isAvailable)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return nil, fmt.Errorf("%s: %w", op, ErrNotFound)
 	}
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *Service) PcType(
 	}
 
 	pcType, err = s.provider.PcType(ctx, typeId)
-	if errors.Is(err, sqlServer.ErrNotFound) {
+	if errors.Is(err, ssms.ErrNotFound) {
 		return models.PcTypeData{}, fmt.Errorf("%s: %w", op, ErrNotFound)
 	}
 	if err != nil {

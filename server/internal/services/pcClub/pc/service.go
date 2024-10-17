@@ -65,11 +65,16 @@ type owner interface {
 		typeId int64,
 	) (err error)
 
-	//UpdatePc(
-	//	ctx context.Context,
-	//	id int64,
-	//	pc models.Pc,
-	//) (err error)
+	UpdatePcType(
+		ctx context.Context,
+		typeId int64,
+		name string,
+		description string,
+		processor *models.ProcessorData,
+		videoCard *models.VideoCardData,
+		monitor *models.MonitorData,
+		ram *models.RamData,
+	) (err error)
 }
 
 type Service struct {

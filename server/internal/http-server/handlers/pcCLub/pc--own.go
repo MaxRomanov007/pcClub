@@ -26,6 +26,16 @@ type SavePcRequest struct {
 	Place  int   `json:"place" validate:"required,numeric"`
 }
 
+type UpdatePcTypeRequest struct {
+	TypeId      int64                 `json:"id" validate:"required,numeric"`
+	Name        string                `json:"name" validate:"required"`
+	Description string                `json:"description" validate:"omitempty,max=255"`
+	Processor   *models.ProcessorData `json:"processor" validate:"required,dive"`
+	VideoCard   *models.VideoCardData `json:"video_card" validate:"required,dive"`
+	Monitor     *models.MonitorData   `json:"monitor" validate:"required,dive"`
+	Ram         *models.RamData       `json:"ram" validate:"required,dive"`
+}
+
 type DeletePcTypeRequest struct {
 	PcTypeId int64 `json:"pc_type_id" validate:"required,numeric"`
 }
@@ -103,6 +113,44 @@ func (a *API) SavePc() http.HandlerFunc {
 		}
 
 		render.JSON(w, r, "saved success")
+	}
+}
+
+func (a *API) UpdatePcType() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.pcClub.pc.UpdatePcType"
+
+		log := a.log(op, r)
+
+		if !a.authorizeAdmin(w, r, log) {
+			return
+		}
+
+		var req UpdatePcTypeRequest
+		if !a.decodeAndValidateRequest(w, r, log, &req) {
+			return
+		}
+
+		if err := a.PcService.UpdatePcType(
+			r.Context(),
+			req.TypeId,
+			req.Name,
+			req.Description,
+			req.Processor,
+			req.VideoCard,
+			req.Monitor,
+			req.Ram,
+		); err != nil {
+			if errors.Is(err, pc.ErrNotFound) {
+				log.Warn("pc type not found", sl.Err(err))
+				response.AlreadyExists(w, "pc type already exists")
+				return
+			}
+
+			log.Error("failed to save pc type", sl.Err(err))
+			response.Internal(w)
+			return
+		}
 	}
 }
 

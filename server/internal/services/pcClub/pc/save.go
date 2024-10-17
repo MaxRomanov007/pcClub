@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"server/internal/models"
-	"server/internal/storage/sqlServer"
+	"server/internal/storage/ssms"
 )
 
 func (s *Service) SavePcType(
@@ -28,7 +28,7 @@ func (s *Service) SavePcType(
 		monitor,
 		ram,
 	)
-	if errors.Is(err, sqlServer.ErrAlreadyExists) {
+	if errors.Is(err, ssms.ErrAlreadyExists) {
 		return fmt.Errorf("%s: %w", op, ErrAlreadyExists)
 	}
 	if err != nil {
@@ -54,7 +54,7 @@ func (s *Service) SavePc(
 		row,
 		place,
 	)
-	if errors.Is(err, sqlServer.ErrAlreadyExists) {
+	if errors.Is(err, ssms.ErrAlreadyExists) {
 		return fmt.Errorf("%s: %w", op, ErrAlreadyExists)
 	}
 	if err != nil {

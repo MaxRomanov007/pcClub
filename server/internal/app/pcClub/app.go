@@ -50,6 +50,7 @@ func New(cfg *config.HTTPServerConfig, api *pcCLub.API) *App {
 
 	router.Post("/save-pc", api.SavePc())
 	router.Post("/save-pc-type", api.SavePcType())
+	router.Post("/update-pc-type", api.UpdatePcType())
 	router.Post("/delete-pc-type", api.DeletePcType())
 
 	srv := &http.Server{

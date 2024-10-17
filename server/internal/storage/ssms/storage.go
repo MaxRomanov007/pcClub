@@ -1,4 +1,4 @@
-package sqlServer
+package ssms
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	sql "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"
 	"net/url"
-	"reflect"
 	"server/internal/config"
 	"strconv"
 	"strings"
@@ -27,7 +26,7 @@ type Storage struct {
 }
 
 func New(cfg *config.SQLServerConfig) (*Storage, error) {
-	const op = "storage.sqlServer.New"
+	const op = "storage.ssms.New"
 
 	query := url.Values{}
 	query.Add("app name", cfg.AppName)
@@ -77,45 +76,4 @@ func replacePositionalParams(query string, args []interface{}) string {
 		query = strings.Replace(query, "?", param, 1)
 	}
 	return query
-}
-
-func addPrefixToSlice(strings []string, prefix string) []string {
-	result := make([]string, len(strings))
-	for i, str := range strings {
-		result[i] = prefix + str
-	}
-	return result
-}
-
-func appendStringSlices(slices ...[]string) []string {
-	var result []string
-	for _, slice := range slices {
-		result = append(result, slice...)
-	}
-	return result
-}
-
-// GetDBTags возвращает слайс структурных тегов `db` из структуры.
-func GetDBTags(s interface{}) []string {
-	v := reflect.ValueOf(s)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	if v.Kind() != reflect.Struct {
-		return nil
-	}
-
-	t := v.Type()
-	tags := make([]string, 0, v.NumField())
-
-	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-		tag := field.Tag.Get("db")
-		if tag != "" && tag != "-" {
-			tags = append(tags, tag)
-		}
-	}
-
-	return tags
 }

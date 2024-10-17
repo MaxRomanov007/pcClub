@@ -11,7 +11,7 @@ import (
 	"server/internal/services/pcClub/pc"
 	"server/internal/services/pcClub/user"
 	"server/internal/storage/redis"
-	"server/internal/storage/sqlServer"
+	"server/internal/storage/ssms"
 )
 
 type App struct {
@@ -38,7 +38,7 @@ func New(
 ) (*App, error) {
 	const op = "app.New"
 
-	sqlserverStorage, err := sqlServer.New(cfg.Database.SQLServer)
+	sqlserverStorage, err := ssms.New(cfg.Database.SQLServer)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to create sqlserver storage: %w", op, err)
 	}
