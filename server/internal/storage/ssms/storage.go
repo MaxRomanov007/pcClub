@@ -1,10 +1,11 @@
 package ssms
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
-	sql "github.com/denisenkom/go-mssqldb"
+	sqld "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"
 	"net/url"
 	"server/internal/config"
@@ -18,6 +19,7 @@ var (
 	ErrReferenceNotExists = errors.New("reference does not exist")
 	ErrTooLong            = errors.New("field too long")
 	ErrNullPointer        = errors.New("null pointer")
+	ErrCheckFailed        = errors.New("check failed")
 )
 
 type Storage struct {
@@ -53,7 +55,7 @@ func New(cfg *config.SQLServerConfig) (*Storage, error) {
 }
 
 func handleError(err error) error {
-	if driverErr, ok := err.(sql.Error); ok {
+	if driverErr, ok := err.(sqld.Error); ok {
 		switch driverErr.Number {
 		case 2627: // Нарушение уникального индекса
 			return ErrAlreadyExists
@@ -63,6 +65,8 @@ func handleError(err error) error {
 			return ErrTooLong
 		case 515: // Попытка вставить NULL в столбец, который не допускает NULL
 			return ErrNullPointer
+		case 54332:
+			return ErrCheckFailed
 		default:
 			return err
 		}
@@ -76,4 +80,12 @@ func replacePositionalParams(query string, args []interface{}) string {
 		query = strings.Replace(query, "?", param, 1)
 	}
 	return query
+}
+
+func nullString(s string) sql.Null[string] {
+	nullable := sql.Null[string]{V: s}
+	if s != "" {
+		nullable.Valid = true
+	}
+	return nullable
 }

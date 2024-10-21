@@ -15,16 +15,17 @@ import (
 )
 
 type App struct {
-	Log        *slog.Logger
-	HTTPServer *http.Server
+	Log         *slog.Logger
+	HTTPSServer *http.Server
+	Cfg         *config.HTTPSServerConfig
 }
 
-func New(cfg *config.HTTPServerConfig, api *pcCLub.API) *App {
+func New(cfg *config.HTTPSServerConfig, api *pcCLub.API) *App {
 	router := chi.NewRouter()
 
 	router.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"https://*", "http://*", "*"},
+		AllowedOrigins: []string{"https://*", "*"},
 		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"X-PINGOTHER", "Accept", "Authorization", "Content-Type", "X-CSRF-Token", "Depth", "UserService-Agent", "X-File-Size", "X-Requested-With", "If-Modified-Since", "X-File-Name", "Cache-Control", "Access-Control-Expose-Headers", "Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"},
@@ -51,6 +52,7 @@ func New(cfg *config.HTTPServerConfig, api *pcCLub.API) *App {
 	router.Post("/save-pc", api.SavePc())
 	router.Post("/save-pc-type", api.SavePcType())
 	router.Post("/update-pc-type", api.UpdatePcType())
+	router.Post("/update-pc", api.UpdatePc())
 	router.Post("/delete-pc-type", api.DeletePcType())
 
 	srv := &http.Server{
@@ -62,30 +64,31 @@ func New(cfg *config.HTTPServerConfig, api *pcCLub.API) *App {
 	}
 
 	return &App{
-		Log:        api.Log,
-		HTTPServer: srv,
+		Log:         api.Log,
+		HTTPSServer: srv,
+		Cfg:         cfg,
 	}
 }
 
 func (a *App) MustRun() {
-	const op = "app.cars.MustRun"
+	const op = "app.club.MustRun"
 
 	log := a.Log.With(
 		slog.String("operation", op),
 	)
 
-	if err := a.Run(); err != nil {
+	if err := a.RunClub(); err != nil {
 		log.Error("failed to start server", sl.Err(err))
 
 		panic(err)
 	}
 }
 
-func (a *App) Run() error {
-	const op = "app.cars.Run"
+func (a *App) RunClub() error {
+	const op = "app.club.Run"
 
-	if err := a.HTTPServer.ListenAndServe(); err != nil {
-		return fmt.Errorf("%s: failed to start server: %w", op, err)
+	if err := a.HTTPSServer.ListenAndServeTLS(a.Cfg.SSLCert, a.Cfg.SSLKey); err != nil {
+		return fmt.Errorf("%s: failed to start club server: %w", op, err)
 	}
 
 	return nil
@@ -94,9 +97,9 @@ func (a *App) Run() error {
 func (a *App) Stop(ctx context.Context) error {
 	const op = "app.cars.Run"
 
-	err := a.HTTPServer.Shutdown(ctx)
+	err := a.HTTPSServer.Shutdown(ctx)
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: failed to stop club server: %w", op, err)
 	}
 
 	return nil

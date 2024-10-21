@@ -31,10 +31,12 @@ type DatabaseConfig struct {
 	Redis     *RedisConfig     `yaml:"redis"`
 }
 
-type HTTPServerConfig struct {
+type HTTPSServerConfig struct {
 	Address     string        `yaml:"address"`
 	Timeout     time.Duration `yaml:"timeout"`
 	IdleTimeout time.Duration `yaml:"idle_timeout"`
+	SSLCert     string        `yaml:"ssl_cert"`
+	SSLKey      string        `yaml:"ssl_key"`
 }
 
 type PCSImagesConfig struct {
@@ -75,12 +77,12 @@ type UserConfig struct {
 }
 
 type Config struct {
-	Env        string            `yaml:"env"`
-	Database   *DatabaseConfig   `yaml:"database"`
-	HttpServer *HTTPServerConfig `yaml:"http_server"`
-	Images     *ImagesConfig     `yaml:"images"`
-	Auth       *AuthConfig       `yaml:"auth"`
-	User       *UserConfig       `yaml:"user"`
+	Env         string             `yaml:"env"`
+	Database    *DatabaseConfig    `yaml:"database"`
+	HttpsServer *HTTPSServerConfig `yaml:"https_server"`
+	Images      *ImagesConfig      `yaml:"images"`
+	Auth        *AuthConfig        `yaml:"auth"`
+	User        *UserConfig        `yaml:"user"`
 }
 
 func MustLoad() *Config {

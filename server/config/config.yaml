@@ -14,10 +14,12 @@ database:
     password: ""
     db: 0
     default_ttl: 15m
-http_server:
+https_server:
   address: "localhost:8080"
   timeout: 4s
   idle_timeout: 60s
+  ssl_cert: "D:/Лабы/3 курс/ПРОЕКТ/Веб/server/ssl/localhost.pem"
+  ssl_key: "D:/Лабы/3 курс/ПРОЕКТ/Веб/server/ssl/localhost-key.pem"
 images:
   pcs:
     path: "D:/Лабы/3 курс/ПРОЕКТ/Веб/images/pcs"
