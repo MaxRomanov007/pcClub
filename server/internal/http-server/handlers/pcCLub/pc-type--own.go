@@ -19,13 +19,6 @@ type SavePcTypeRequest struct {
 	Ram         *models.RamData       `json:"ram" validate:"required,dive"`
 }
 
-type SavePcRequest struct {
-	TypeId int64 `json:"type_id" validate:"required,numeric"`
-	RoomId int64 `json:"room_id" validate:"required,numeric"`
-	Row    int   `json:"row" validate:"required,numeric"`
-	Place  int   `json:"place" validate:"required,numeric"`
-}
-
 type UpdatePcTypeRequest struct {
 	TypeId      int64                 `json:"id" validate:"required,numeric"`
 	Name        string                `json:"name" validate:"required"`
@@ -42,7 +35,7 @@ type DeletePcTypeRequest struct {
 
 func (a *API) SavePcType() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.pcClub.pc.SavePcType"
+		const op = "handlers.pcClub.pcType.SavePcType"
 
 		log := a.log(op, r)
 
@@ -79,46 +72,9 @@ func (a *API) SavePcType() http.HandlerFunc {
 	}
 }
 
-func (a *API) SavePc() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.pcClub.pc.SavePc"
-
-		log := a.log(op, r)
-
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req SavePcRequest
-		if !a.decodeAndValidateRequest(w, r, log, &req) {
-			return
-		}
-
-		err := a.PcService.SavePc(
-			r.Context(),
-			req.TypeId,
-			req.RoomId,
-			req.Row,
-			req.Place,
-		)
-		if errors.Is(err, pc.ErrAlreadyExists) {
-			log.Warn("pc already exists", sl.Err(err))
-			response.AlreadyExists(w, "pc already exists")
-			return
-		}
-		if err != nil {
-			log.Error("failed to save pc")
-			response.Internal(w)
-			return
-		}
-
-		render.JSON(w, r, "saved success")
-	}
-}
-
 func (a *API) UpdatePcType() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.pcClub.pc.UpdatePcType"
+		const op = "handlers.pcClub.pcType.UpdatePcType"
 
 		log := a.log(op, r)
 
@@ -156,7 +112,7 @@ func (a *API) UpdatePcType() http.HandlerFunc {
 
 func (a *API) DeletePcType() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.pcClub.pc.DeletePcType"
+		const op = "handlers.pcClub.pcType.DeletePcType"
 
 		log := a.log(op, r)
 

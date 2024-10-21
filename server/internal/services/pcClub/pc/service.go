@@ -48,6 +48,7 @@ type owner interface {
 		roomId int64,
 		row int,
 		place int,
+		description string,
 	) (err error)
 
 	SavePcType(
@@ -75,6 +76,17 @@ type owner interface {
 		monitor *models.MonitorData,
 		ram *models.RamData,
 	) (err error)
+
+	UpdatePc(
+		ctx context.Context,
+		pcId int64,
+		typeId int64,
+		roomId int64,
+		statusId int64,
+		row int,
+		place int,
+		description string,
+	) (err error)
 }
 
 type Service struct {
@@ -85,8 +97,10 @@ type Service struct {
 }
 
 var (
-	ErrNotFound      = errors.New("not found")
-	ErrAlreadyExists = errors.New("pc type already exists")
+	ErrNotFound           = errors.New("not found")
+	ErrAlreadyExists      = errors.New("pc type already exists")
+	ErrConstraint         = errors.New("constraint error")
+	ErrReferenceNotExists = errors.New("reference data doesnt exists")
 )
 
 func New(redisProvider redisProvider, redisOwner redisOwner, provider provider, owner owner) *Service {

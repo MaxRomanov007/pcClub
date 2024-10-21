@@ -1,5 +1,7 @@
 package models
 
+import "database/sql"
+
 // PcType represents the pc_types table.
 type PcType struct {
 	PcTypeID    int64  `db:"pc_type_id"`
@@ -52,13 +54,13 @@ type PcStatus struct {
 
 // Pc represents the pc table.
 type Pc struct {
-	PcID        int64  `db:"pc_id"`
-	PcRoomID    int64  `db:"pc_room_id"`
-	PcTypeID    int64  `db:"pc_type_id"`
-	PcStatusID  int64  `db:"pc_status_id"`
-	Row         int    `db:"row"`
-	Place       int    `db:"place"`
-	Description string `db:"description"`
+	PcID        int64            `db:"pc_id"`
+	PcRoomID    int64            `db:"pc_room_id"`
+	PcTypeID    int64            `db:"pc_type_id"`
+	PcStatusID  int64            `db:"pc_status_id"`
+	Row         int              `db:"row"`
+	Place       int              `db:"place"`
+	Description sql.Null[string] `db:"description"`
 	PcRoom      *PcRoom
 	PcType      *PcType
 	PcStatus    *PcStatus

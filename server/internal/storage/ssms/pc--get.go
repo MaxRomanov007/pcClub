@@ -106,12 +106,23 @@ func (s *Storage) Pcs(
 
 	stmt = replacePositionalParams(stmt, args)
 
-	var pcs []models.PcData
+	var pcs []models.Pc
 	if err := s.db.SelectContext(ctx, &pcs, stmt, args...); err != nil {
 		return nil, fmt.Errorf("%s: failed to get pcs: %w", op, handleError(err))
 	}
 
-	return pcs, nil
+	pcsData := make([]models.PcData, len(pcs))
+	for i, pc := range pcs {
+		pcsData[i] = models.PcData{
+			PcID:        pc.PcID,
+			Row:         pc.Row,
+			Place:       pc.Place,
+			Description: pc.Description.V,
+			PcRoomID:    pc.PcRoomID,
+		}
+	}
+
+	return pcsData, nil
 }
 
 func (s *Storage) PcTypes(

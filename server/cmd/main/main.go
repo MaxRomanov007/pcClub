@@ -40,9 +40,8 @@ func main() {
 
 	log.Info("stopping pcClub server", slog.String("signal", sign.String()))
 
-	err := application.PCClub.Stop(ctx)
-	if err != nil {
-		log.Error("failed stop server")
+	if err := application.PCClub.Stop(ctx); err != nil {
+		log.Error("failed stop pcClub server")
 
 		panic(err)
 	}

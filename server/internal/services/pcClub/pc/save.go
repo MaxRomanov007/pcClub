@@ -44,6 +44,7 @@ func (s *Service) SavePc(
 	roomId int64,
 	row int,
 	place int,
+	description string,
 ) error {
 	const op = "services.pcClub.pc.SavePc"
 
@@ -53,6 +54,7 @@ func (s *Service) SavePc(
 		roomId,
 		row,
 		place,
+		description,
 	)
 	if errors.Is(err, ssms.ErrAlreadyExists) {
 		return fmt.Errorf("%s: %w", op, ErrAlreadyExists)

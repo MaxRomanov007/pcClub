@@ -117,6 +117,7 @@ type PcService interface {
 		roomId int64,
 		row int,
 		place int,
+		description string,
 	) (err error)
 
 	UpdatePcType(
@@ -128,6 +129,17 @@ type PcService interface {
 		videoCard *models.VideoCardData,
 		monitor *models.MonitorData,
 		ram *models.RamData,
+	) (err error)
+
+	UpdatePc(
+		ctx context.Context,
+		pcId int64,
+		typeId int64,
+		roomId int64,
+		statusId int64,
+		row int,
+		place int,
+		description string,
 	) (err error)
 
 	DeletePcType(

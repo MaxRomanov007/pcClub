@@ -54,7 +54,7 @@ func New(
 
 	pcClubApi := pcClubServer.New(log, cfg, userService, authService, pcService)
 
-	pcClubApplication := pcClubApp.New(cfg.HttpServer, pcClubApi)
+	pcClubApplication := pcClubApp.New(cfg.HttpsServer, pcClubApi)
 
 	return &App{
 		PCClub: pcClubApplication,

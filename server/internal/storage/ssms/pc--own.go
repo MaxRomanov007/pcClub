@@ -2,8 +2,11 @@ package ssms
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"reflect"
+	"regexp"
 	"server/internal/models"
 )
 
@@ -17,11 +20,12 @@ func (s *Storage) SavePcType(
 	ram *models.RamData,
 ) error {
 	const op = "storage.ssms.pc.SavePc"
+
 	stmt, args, err := squirrel.
 		Expr(
 			"EXEC InsertPcType ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
 			name,
-			description,
+			nullString(description),
 			processor.Producer,
 			processor.Model,
 			videoCard.Producer,
@@ -51,6 +55,7 @@ func (s *Storage) SavePc(
 	roomId int64,
 	row int,
 	place int,
+	description string,
 ) error {
 	const op = "storage.ssms.pc.SavePc"
 
@@ -61,12 +66,14 @@ func (s *Storage) SavePc(
 			"pc_room_id",
 			"row",
 			"place",
+			"[description]",
 		).
 		Values(
 			typeId,
 			roomId,
 			row,
 			place,
+			nullString(description),
 		).
 		ToSql()
 	if err != nil {
@@ -123,7 +130,7 @@ func (s *Storage) UpdatePcType(
 		"EXEC UpdatePcType ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
 		typeId,
 		name,
-		description,
+		nullString(description),
 		processor.Producer,
 		processor.Model,
 		videoCard.Producer,
@@ -149,4 +156,60 @@ func (s *Storage) UpdatePcType(
 	}
 
 	return nil
+}
+
+func (s *Storage) UpdatePc(
+	ctx context.Context,
+	pcId int64,
+	typeId int64,
+	roomId int64,
+	statusId int64,
+	row int,
+	place int,
+	description string,
+) error {
+	const op = "storage.ssms.pc.UpdatePc"
+
+	stmt := squirrel.
+		Update("pc").
+		Where(squirrel.Eq{
+			"pc_id": pcId,
+		})
+
+	stmt = setIfNotZero(stmt, "pc_type_id", typeId)
+	stmt = setIfNotZero(stmt, "pc_room_id", roomId)
+	stmt = setIfNotZero(stmt, "pc_status_id", statusId)
+	stmt = setIfNotZero(stmt, "row", row)
+	stmt = setIfNotZero(stmt, "place", place)
+	if match, err := regexp.MatchString("[Nn][Uu][Ll][Ll]", description); err == nil && match {
+		stmt = stmt.Set("description", sql.Null[string]{})
+	} else {
+		stmt = setIfNotZero(stmt, "description", description)
+	}
+
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return fmt.Errorf("%s: failed to prepare statement: %w", op, err)
+	}
+
+	query = replacePositionalParams(query, args)
+
+	if _, err := s.db.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("%s: failed to exec statement: %w", op, handleError(err))
+	}
+
+	return nil
+}
+
+func setIfNotZero(stmt squirrel.UpdateBuilder, columnName string, a any) squirrel.UpdateBuilder {
+	if !isZero(a) {
+		stmt = stmt.Set(columnName, a)
+	}
+	return stmt
+}
+func isZero(a any) bool {
+	if reflect.ValueOf(a).Interface() == reflect.Zero(reflect.TypeOf(a)).Interface() {
+		return true
+	}
+	return false
 }

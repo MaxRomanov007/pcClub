@@ -12,11 +12,6 @@ import (
 	"strconv"
 )
 
-type PcsRequest struct {
-	typeId      string `validate:"require,number"`
-	isAvailable string `validate:"omitempty,boolean"`
-}
-
 type PcTypesRequest struct {
 	limit  string `validate:"omitempty,number"`
 	offset string `validate:"omitempty,number"`
@@ -26,69 +21,9 @@ type PcTypeRequest struct {
 	typeId string `validate:"require,number"`
 }
 
-func (a *API) Pcs() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.pcClub.pc"
-
-		log := a.log(op, r)
-
-		req := &PcsRequest{
-			typeId:      r.URL.Query().Get("type_id"),
-			isAvailable: r.URL.Query().Get("is_available"),
-		}
-		if err := validator.New().Struct(req); err != nil {
-			var validErr validator.ValidationErrors
-			if ok := errors.Is(err, &validErr); ok {
-				log.Warn("invalid request", sl.Err(err))
-				response.ValidationFailed(w, validErr)
-				return
-			}
-
-			log.Error("validation failed", sl.Err(err))
-			response.Internal(w)
-			return
-		}
-
-		if req.typeId == "" {
-			req.typeId = "0"
-		}
-		if req.isAvailable == "" {
-			req.isAvailable = "0"
-		}
-
-		typeId, err := strconv.ParseInt(req.typeId, 10, 64)
-		if err != nil {
-			log.Error("failed to parse type id", sl.Err(err))
-			response.Internal(w)
-			return
-		}
-
-		isFree, err := strconv.ParseBool(req.isAvailable)
-		if err != nil {
-			log.Error("failed to parse is free flag", sl.Err(err))
-			response.Internal(w)
-			return
-		}
-
-		pcs, err := a.PcService.Pcs(r.Context(), typeId, isFree)
-		if errors.Is(err, pc.ErrNotFound) {
-			log.Warn("pc type not found", sl.Err(err))
-			response.NotFound(w, "pc type not found")
-			return
-		}
-		if err != nil {
-			log.Error("failed to get pcs", sl.Err(err))
-			response.Internal(w)
-			return
-		}
-
-		render.JSON(w, r, pcs)
-	}
-}
-
 func (a *API) PcTypes() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.pcClub.pc.PcTypes"
+		const op = "handlers.pcClub.pcType.PcTypes"
 
 		log := a.log(op, r)
 
@@ -143,7 +78,7 @@ func (a *API) PcTypes() http.HandlerFunc {
 
 func (a *API) PcType() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.pcClub.pc.PcType"
+		const op = "handlers.pcClub.pcType.PcType"
 
 		log := a.log(op, r)
 
