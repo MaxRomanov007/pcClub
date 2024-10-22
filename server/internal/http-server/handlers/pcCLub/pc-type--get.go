@@ -4,10 +4,9 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator"
 	"net/http"
-	"server/internal/lib/api/response"
 	"server/internal/lib/logger/sl"
+	"server/internal/lib/response"
 	"server/internal/services/pcClub/pc"
 	"strconv"
 )
@@ -32,15 +31,7 @@ func (a *API) PcTypes() http.HandlerFunc {
 			offset: r.URL.Query().Get("offset"),
 		}
 
-		if err := validator.New().Struct(req); err != nil {
-			var validErr validator.ValidationErrors
-			if ok := errors.Is(err, &validErr); ok {
-				log.Warn("invalid request", sl.Err(err))
-				response.ValidationFailed(w, validErr)
-				return
-			}
-			log.Error("validation failed", sl.Err(err))
-			response.Internal(w)
+		if !a.validateRequest(w, *req, log) {
 			return
 		}
 
@@ -67,6 +58,12 @@ func (a *API) PcTypes() http.HandlerFunc {
 
 		pcTypes, err := a.PcService.PcTypes(r.Context(), limit, offset)
 		if err != nil {
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
+				return
+			}
 			log.Error("failed to get pc types", sl.Err(err))
 			response.Internal(w)
 			return
@@ -86,16 +83,7 @@ func (a *API) PcType() http.HandlerFunc {
 			typeId: chi.URLParam(r, "type_id"),
 		}
 
-		if err := validator.New().Struct(req); err != nil {
-			var validErr validator.ValidationErrors
-			if ok := errors.Is(err, &validErr); ok {
-				log.Warn("invalid request", sl.Err(err))
-				response.ValidationFailed(w, validErr)
-				return
-			}
-
-			log.Error("validation failed", sl.Err(err))
-			response.Internal(w)
+		if !a.validateRequest(w, *req, log) {
 			return
 		}
 
@@ -107,12 +95,13 @@ func (a *API) PcType() http.HandlerFunc {
 		}
 
 		pcType, err := a.PcService.PcType(r.Context(), typeId)
-		if errors.Is(err, pc.ErrNotFound) {
-			log.Warn("pc type not found", sl.Err(err))
-			response.NotFound(w, "pc type not found")
-			return
-		}
 		if err != nil {
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
+				return
+			}
 			log.Error("failed to get pc type", sl.Err(err))
 			response.Internal(w)
 			return

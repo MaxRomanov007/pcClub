@@ -17,7 +17,7 @@ func (s *Service) User(
 
 	user, err := s.userProvider.User(ctx, uid)
 	if errors.Is(err, ssms.ErrNotFound) {
-		return models.UserData{}, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		return models.UserData{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
 	}
 	if err != nil {
 		return models.UserData{}, fmt.Errorf("%s: failed to get user: %w", op, err)
@@ -34,7 +34,7 @@ func (s *Service) UserByEmail(
 
 	user, err := s.userProvider.UserByEmail(ctx, email)
 	if errors.Is(err, ssms.ErrNotFound) {
-		return models.User{}, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		return models.User{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
 	}
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: failed to get user: %w", op, err)
@@ -105,7 +105,7 @@ func (s *Service) DeleteUser(
 
 	err := s.userOwner.DeleteUser(ctx, uid)
 	if errors.Is(err, ssms.ErrNotFound) {
-		return fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		return fmt.Errorf("%s: %w", op, ErrUserNotFound)
 	}
 	if err != nil {
 		return fmt.Errorf("%s: failed to delete user: %w", op, err)

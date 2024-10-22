@@ -62,7 +62,7 @@ func (s *Service) UpdatePc(
 		description,
 	); err != nil {
 		if errors.Is(err, ssms.ErrCheckFailed) {
-			return fmt.Errorf("%s: %w", op, ErrConstraint)
+			return fmt.Errorf("%s: %w", op, ErrConstraint.WithDesc("pc row or place greater than room"))
 		}
 		if errors.Is(err, ssms.ErrAlreadyExists) {
 			return fmt.Errorf("%s: %w", op, ErrAlreadyExists)

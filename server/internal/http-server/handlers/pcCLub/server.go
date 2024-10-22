@@ -9,9 +9,9 @@ import (
 	"log/slog"
 	"net/http"
 	"server/internal/config"
-	"server/internal/lib/api/cookie"
-	"server/internal/lib/api/response"
+	"server/internal/lib/cookie"
 	"server/internal/lib/logger/sl"
+	"server/internal/lib/response"
 	"server/internal/models"
 	"server/internal/services/pcClub/auth"
 	"server/internal/services/pcClub/user"
@@ -172,13 +172,21 @@ func New(
 	}
 }
 
-func (a *API) decodeAndValidateRequest(w http.ResponseWriter, r *http.Request, log *slog.Logger, req interface{}) bool {
+func (a *API) decodeAndValidateRequest(w http.ResponseWriter, r *http.Request, log *slog.Logger, req any) bool {
 	if err := render.DecodeJSON(r.Body, &req); err != nil {
 		log.Error("failed to decode request body", sl.Err(err))
 		response.Internal(w)
 		return false
 	}
 
+	if !a.validateRequest(w, req, log) {
+		return false
+	}
+
+	return true
+}
+
+func (a *API) validateRequest(w http.ResponseWriter, req any, log *slog.Logger) bool {
 	if err := validator.New().Struct(req); err != nil {
 		var validError validator.ValidationErrors
 		if ok := errors.As(err, &validError); ok {
@@ -191,7 +199,6 @@ func (a *API) decodeAndValidateRequest(w http.ResponseWriter, r *http.Request, l
 		response.Internal(w)
 		return false
 	}
-
 	return true
 }
 

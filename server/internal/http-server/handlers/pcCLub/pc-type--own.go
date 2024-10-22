@@ -2,10 +2,9 @@ package pcCLub
 
 import (
 	"errors"
-	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/api/response"
 	"server/internal/lib/logger/sl"
+	"server/internal/lib/response"
 	"server/internal/models"
 	"server/internal/services/pcClub/pc"
 )
@@ -57,18 +56,16 @@ func (a *API) SavePcType() http.HandlerFunc {
 			req.Monitor,
 			req.Ram,
 		); err != nil {
-			if errors.Is(err, pc.ErrAlreadyExists) {
-				log.Warn("pc type already exists", sl.Err(err))
-				response.AlreadyExists(w, "pc type already exists")
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
 				return
 			}
-
 			log.Error("failed to save pc type", sl.Err(err))
 			response.Internal(w)
 			return
 		}
-
-		render.JSON(w, r, "saved success")
 	}
 }
 
@@ -97,12 +94,12 @@ func (a *API) UpdatePcType() http.HandlerFunc {
 			req.Monitor,
 			req.Ram,
 		); err != nil {
-			if errors.Is(err, pc.ErrNotFound) {
-				log.Warn("pc type not found", sl.Err(err))
-				response.AlreadyExists(w, "pc type already exists")
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
 				return
 			}
-
 			log.Error("failed to save pc type", sl.Err(err))
 			response.Internal(w)
 			return
@@ -126,15 +123,16 @@ func (a *API) DeletePcType() http.HandlerFunc {
 		}
 
 		err := a.PcService.DeletePcType(r.Context(), req.PcTypeId)
-		if errors.Is(err, pc.ErrNotFound) {
-			log.Warn("pc type not found", sl.Err(err))
-			response.NotFound(w, "pc type not found")
+		if err != nil {
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
+				return
+			}
+			log.Error("failed to delete pc type", sl.Err(err))
+			response.Internal(w)
 			return
 		}
-		if err != nil {
-			log.Error("failed to delete pc type", sl.Err(err))
-		}
-
-		render.JSON(w, r, "deleted success")
 	}
 }

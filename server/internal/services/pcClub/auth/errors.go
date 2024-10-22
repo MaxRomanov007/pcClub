@@ -14,29 +14,38 @@ func (e *Error) Error() string {
 	return e.Message
 }
 
+const (
+	ErrTokenMalformedCode        = "TokenMalformed"
+	ErrTokenSignatureInvalidCode = "TokenSignatureInvalid"
+	ErrTokenExpiredCode          = "TokenExpired"
+	ErrTokenInBlackListCode      = "TokenInBlackList"
+	ErrUserNotFoundCode          = "UserNotFound"
+	ErrInvalidRefreshVersionCode = "InvalidRefreshVersion"
+)
+
 var (
 	ErrTokenMalformed = &Error{
-		Code:    "TokenMalformed",
+		Code:    ErrTokenMalformedCode,
 		Message: "token is malformed",
 	}
 	ErrTokenSignatureInvalid = &Error{
-		Code:    "TokenSignatureInvalid",
+		Code:    ErrTokenSignatureInvalidCode,
 		Message: "token signature is invalid",
 	}
 	ErrTokenExpired = &Error{
-		Code:    "TokenExpired",
+		Code:    ErrTokenExpiredCode,
 		Message: "token is expired",
 	}
 	ErrTokenInBlackList = &Error{
-		Code:    "TokenInBlackList",
+		Code:    ErrTokenInBlackListCode,
 		Message: "token is in blacklist",
 	}
 	ErrUserNotFound = &Error{
-		Code:    "UserNotFound",
+		Code:    ErrUserNotFoundCode,
 		Message: "user not found",
 	}
 	ErrInvalidRefreshVersion = &Error{
-		Code:    "InvalidRefreshVersion",
+		Code:    ErrInvalidRefreshVersionCode,
 		Message: "invalid refresh version",
 	}
 )

@@ -2,7 +2,6 @@ package pc
 
 import (
 	"context"
-	"errors"
 	"server/internal/models"
 )
 
@@ -95,13 +94,6 @@ type Service struct {
 	provider      provider
 	owner         owner
 }
-
-var (
-	ErrNotFound           = errors.New("not found")
-	ErrAlreadyExists      = errors.New("pc type already exists")
-	ErrConstraint         = errors.New("constraint error")
-	ErrReferenceNotExists = errors.New("reference data doesnt exists")
-)
 
 func New(redisProvider redisProvider, redisOwner redisOwner, provider provider, owner owner) *Service {
 	return &Service{

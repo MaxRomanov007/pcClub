@@ -2,7 +2,6 @@ package ssms
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
 	sqld "github.com/denisenkom/go-mssqldb"
@@ -11,15 +10,6 @@ import (
 	"server/internal/config"
 	"strconv"
 	"strings"
-)
-
-var (
-	ErrNotFound           = errors.New("not found")
-	ErrAlreadyExists      = errors.New("already exists")
-	ErrReferenceNotExists = errors.New("reference does not exist")
-	ErrTooLong            = errors.New("field too long")
-	ErrNullPointer        = errors.New("null pointer")
-	ErrCheckFailed        = errors.New("check failed")
 )
 
 type Storage struct {

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/api/response"
 	"server/internal/lib/logger/sl"
+	"server/internal/lib/response"
 	"server/internal/services/pcClub/auth"
 	"server/internal/services/pcClub/user"
 )
@@ -42,12 +42,13 @@ func (a *API) Register() http.HandlerFunc {
 		}
 
 		id, err := a.UserService.SaveUser(r.Context(), req.Email, req.Password)
-		if errors.Is(err, user.ErrUserAlreadyExists) {
-			log.Warn("user already exists", sl.Err(err))
-			response.AlreadyExists(w, "user already exists")
-			return
-		}
 		if err != nil {
+			var userErr *user.Error
+			if ok := errors.As(err, &userErr); ok {
+				log.Warn("user error", sl.Err(err))
+				response.UserError(w, userErr)
+				return
+			}
 			log.Error("failed to register user", sl.Err(err))
 			response.Internal(w)
 			return
@@ -87,12 +88,13 @@ func (a *API) Login() http.HandlerFunc {
 		}
 
 		id, err := a.UserService.Login(r.Context(), req.Email, req.Password)
-		if errors.Is(err, user.ErrInvalidCredentials) {
-			log.Warn("user not found", sl.Err(err))
-			response.Unauthorized(w, "user not found")
-			return
-		}
 		if err != nil {
+			var userErr *user.Error
+			if ok := errors.As(err, &userErr); ok {
+				log.Warn("user error", sl.Err(err))
+				response.UserError(w, userErr)
+				return
+			}
 			log.Error("failed to login user", sl.Err(err))
 			response.Internal(w)
 			return
@@ -139,7 +141,6 @@ func (a *API) Refresh() http.HandlerFunc {
 				response.AuthorizationFailed(w, authError)
 				return
 			}
-
 			log.Error("failed to access token", sl.Err(err))
 			response.Internal(w)
 			return
@@ -165,12 +166,13 @@ func (a *API) User() http.HandlerFunc {
 		}
 
 		userData, err := a.UserService.User(r.Context(), uid)
-		if errors.Is(err, user.ErrInvalidCredentials) {
-			log.Warn("user not found", sl.Err(err))
-			response.Unauthorized(w, "user not found")
-			return
-		}
 		if err != nil {
+			var userErr *user.Error
+			if ok := errors.As(err, &userErr); ok {
+				log.Warn("user error", sl.Err(err))
+				response.UserError(w, userErr)
+				return
+			}
 			log.Error("failed to get user", sl.Err(err))
 			response.Internal(w)
 			return
@@ -204,12 +206,9 @@ func (a *API) Logout() http.HandlerFunc {
 				response.AuthorizationFailed(w, authError)
 				return
 			}
-
 			log.Error("failed to access token", sl.Err(err))
 			response.Internal(w)
 			return
 		}
-
-		render.JSON(w, r, "logout success")
 	}
 }
