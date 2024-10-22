@@ -5,8 +5,8 @@ import (
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator"
 	"net/http"
-	"server/internal/lib/api/response"
 	"server/internal/lib/logger/sl"
+	"server/internal/lib/response"
 	"server/internal/services/pcClub/pc"
 	"strconv"
 )
@@ -79,12 +79,13 @@ func (a *API) Pcs() http.HandlerFunc {
 		}
 
 		pcs, err := a.PcService.Pcs(r.Context(), typeId, isFree)
-		if errors.Is(err, pc.ErrNotFound) {
-			log.Warn("pc type not found", sl.Err(err))
-			response.NotFound(w, "pc type not found")
-			return
-		}
 		if err != nil {
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
+				return
+			}
 			log.Error("failed to get pcs", sl.Err(err))
 			response.Internal(w)
 			return
@@ -109,26 +110,24 @@ func (a *API) SavePc() http.HandlerFunc {
 			return
 		}
 
-		err := a.PcService.SavePc(
+		if err := a.PcService.SavePc(
 			r.Context(),
 			req.TypeId,
 			req.RoomId,
 			req.Row,
 			req.Place,
 			req.Description,
-		)
-		if errors.Is(err, pc.ErrAlreadyExists) {
-			log.Warn("pc already exists", sl.Err(err))
-			response.AlreadyExists(w, "pc already exists")
-			return
-		}
-		if err != nil {
-			log.Error("failed to save pc")
+		); err != nil {
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
+				return
+			}
+			log.Error("failed to save pc", sl.Err(err))
 			response.Internal(w)
 			return
 		}
-
-		render.JSON(w, r, "saved success")
 	}
 }
 
@@ -157,25 +156,10 @@ func (a *API) UpdatePc() http.HandlerFunc {
 			req.Place,
 			req.Description,
 		); err != nil {
-			//TODO: make pc type error and response handle method
-			if errors.Is(err, pc.ErrConstraint) {
-				log.Warn("pc row or place greater than room", sl.Err(err))
-				response.AlreadyExists(w, "pc row or place greater than room")
-				return
-			}
-			if errors.Is(err, pc.ErrAlreadyExists) {
-				log.Warn("pc already exists", sl.Err(err))
-				response.AlreadyExists(w, "pc already exists")
-				return
-			}
-			if errors.Is(err, pc.ErrReferenceNotExists) {
-				log.Warn("pc already exists", sl.Err(err))
-				response.AlreadyExists(w, "reference data doesnt exists")
-				return
-			}
-			if errors.Is(err, pc.ErrNotFound) {
-				log.Warn("pc not found", sl.Err(err))
-				response.NotFound(w, "pc not found")
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
 				return
 			}
 

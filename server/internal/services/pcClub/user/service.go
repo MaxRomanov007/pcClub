@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"errors"
 	"server/internal/config"
 	"server/internal/models"
 )
@@ -41,13 +40,6 @@ type Service struct {
 	userProvider provider
 	userOwner    owner
 }
-
-var (
-	ErrInvalidCredentials = errors.New("credentials are not valid")
-	ErrUserAlreadyExists  = errors.New("user already exists")
-	ErrAccessDenied       = errors.New("access denied")
-	ErrUserNotFound       = errors.New("user not found")
-)
 
 func New(
 	cfg *config.UserConfig,

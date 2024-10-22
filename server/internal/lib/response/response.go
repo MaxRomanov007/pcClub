@@ -5,23 +5,13 @@ import (
 	"github.com/go-playground/validator"
 	"net/http"
 	"server/internal/services/pcClub/auth"
+	"server/internal/services/pcClub/pc"
+	"server/internal/services/pcClub/user"
 	"strings"
 )
 
 func Internal(w http.ResponseWriter) {
 	http.Error(w, "internal error", http.StatusInternalServerError)
-}
-
-func NotFound(w http.ResponseWriter, message string) {
-	http.Error(w, message, http.StatusNotFound)
-}
-
-func BadRequest(w http.ResponseWriter, message string) {
-	http.Error(w, message, http.StatusBadRequest)
-}
-
-func AlreadyExists(w http.ResponseWriter, message string) {
-	http.Error(w, message, http.StatusConflict)
 }
 
 func Unauthorized(w http.ResponseWriter, message string) {
@@ -58,4 +48,28 @@ func fieldName(err validator.FieldError) string {
 
 func AuthorizationFailed(w http.ResponseWriter, err *auth.Error) {
 	http.Error(w, err.Error(), http.StatusUnauthorized)
+}
+
+func PcError(w http.ResponseWriter, err *pc.Error) {
+	switch err.Code {
+	case pc.ErrNotFoundCode:
+		http.Error(w, err.Error(), http.StatusNotFound)
+	case pc.ErrAlreadyExistsCode, pc.ErrConstraintCode, pc.ErrReferenceNotExistsCode:
+		http.Error(w, err.Error(), http.StatusConflict)
+	default:
+		Internal(w)
+	}
+}
+
+func UserError(w http.ResponseWriter, err *user.Error) {
+	switch err.Code {
+	case user.ErrUserNotFoundCode:
+		http.Error(w, err.Error(), http.StatusNotFound)
+	case user.ErrUserAlreadyExistsCode:
+		http.Error(w, err.Error(), http.StatusConflict)
+	case user.ErrAccessDeniedCode, user.ErrInvalidCredentialsCode:
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+	default:
+		Internal(w)
+	}
 }
