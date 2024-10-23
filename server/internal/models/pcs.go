@@ -39,11 +39,11 @@ type PcTypeImage struct {
 
 // PcRoom represents the pc_rooms table.
 type PcRoom struct {
-	PcRoomID    int64  `db:"pc_room_id"`
-	Name        string `db:"name"`
-	Rows        int    `db:"rows"`
-	Places      int    `db:"places"`
-	Description string `db:"description"`
+	PcRoomID    int64  `db:"pc_room_id" json:"room_id"`
+	Name        string `db:"name" json:"name"`
+	Rows        int    `db:"rows" json:"rows"`
+	Places      int    `db:"places" json:"places"`
+	Description string `db:"description" json:"description"`
 }
 
 // PcStatus represents the pc_statuses table.
@@ -61,6 +61,7 @@ type Pc struct {
 	Row         int              `db:"row"`
 	Place       int              `db:"place"`
 	Description sql.Null[string] `db:"description"`
+	Status      string           `db:"status"`
 	PcRoom      *PcRoom
 	PcType      *PcType
 	PcStatus    *PcStatus
@@ -72,6 +73,7 @@ type PcData struct {
 	Row         int    `db:"row" json:"row"`
 	Place       int    `db:"place" json:"place"`
 	Description string `db:"description" json:"description"`
+	Status      string `db:"status" json:"status"`
 	PcRoomID    int64  `db:"pc_room_id" json:"pc_room_id"`
 }
 

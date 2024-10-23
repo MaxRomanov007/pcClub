@@ -1,4 +1,4 @@
-package pc
+package pcType
 
 import "server/internal/storage/ssms"
 
