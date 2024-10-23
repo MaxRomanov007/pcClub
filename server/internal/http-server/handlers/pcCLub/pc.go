@@ -3,17 +3,15 @@ package pcCLub
 import (
 	"errors"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator"
 	"net/http"
 	"server/internal/lib/logger/sl"
 	"server/internal/lib/response"
 	"server/internal/services/pcClub/pc"
-	"strconv"
 )
 
 type PcsRequest struct {
-	typeId      string `validate:"require,number"`
-	isAvailable string `validate:"omitempty,boolean"`
+	TypeId      int64 `validate:"require,number,min=1" get:"type-id"`
+	IsAvailable bool  `validate:"omitempty,boolean" get:"is-available"`
 }
 
 type SavePcRequest struct {
@@ -34,51 +32,22 @@ type UpdatePcRequest struct {
 	Description string `json:"description" validate:"omitempty"`
 }
 
+type DeletePcRequest struct {
+	PcId int64 `json:"pc_id" validate:"required,numeric"`
+}
+
 func (a *API) Pcs() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.pcClub.pc"
 
 		log := a.log(op, r)
 
-		req := &PcsRequest{
-			typeId:      r.URL.Query().Get("type-id"),
-			isAvailable: r.URL.Query().Get("is-available"),
-		}
-		if err := validator.New().Struct(req); err != nil {
-			var validErr validator.ValidationErrors
-			if ok := errors.Is(err, &validErr); ok {
-				log.Warn("invalid request", sl.Err(err))
-				response.ValidationFailed(w, validErr)
-				return
-			}
-
-			log.Error("validation failed", sl.Err(err))
-			response.Internal(w)
+		var req PcsRequest
+		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
 			return
 		}
 
-		if req.typeId == "" {
-			req.typeId = "0"
-		}
-		if req.isAvailable == "" {
-			req.isAvailable = "0"
-		}
-
-		typeId, err := strconv.ParseInt(req.typeId, 10, 64)
-		if err != nil {
-			log.Error("failed to parse type id", sl.Err(err))
-			response.Internal(w)
-			return
-		}
-
-		isFree, err := strconv.ParseBool(req.isAvailable)
-		if err != nil {
-			log.Error("failed to parse is free flag", sl.Err(err))
-			response.Internal(w)
-			return
-		}
-
-		pcs, err := a.PcService.Pcs(r.Context(), typeId, isFree)
+		pcs, err := a.PcService.Pcs(r.Context(), req.TypeId, req.IsAvailable)
 		if err != nil {
 			var pcErr *pc.Error
 			if ok := errors.As(err, &pcErr); ok {
@@ -106,7 +75,7 @@ func (a *API) SavePc() http.HandlerFunc {
 		}
 
 		var req SavePcRequest
-		if !a.decodeAndValidateRequest(w, r, log, &req) {
+		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
 			return
 		}
 
@@ -142,7 +111,7 @@ func (a *API) UpdatePc() http.HandlerFunc {
 		}
 
 		var req UpdatePcRequest
-		if !a.decodeAndValidateRequest(w, r, log, &req) {
+		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
 			return
 		}
 
@@ -164,6 +133,35 @@ func (a *API) UpdatePc() http.HandlerFunc {
 			}
 
 			log.Error("failed to update pc", sl.Err(err))
+			response.Internal(w)
+			return
+		}
+	}
+}
+
+func (a *API) DeletePc() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.pcClub.pc.SavePc"
+
+		log := a.log(op, r)
+
+		if !a.authorizeAdmin(w, r, log) {
+			return
+		}
+
+		var req DeletePcRequest
+		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+			return
+		}
+
+		if err := a.PcService.DeletePc(r.Context(), req.PcId); err != nil {
+			var pcErr *pc.Error
+			if ok := errors.As(err, &pcErr); ok {
+				log.Warn("pc error", sl.Err(err))
+				response.PcError(w, pcErr)
+				return
+			}
+			log.Error("failed to delete pc", sl.Err(err))
 			response.Internal(w)
 			return
 		}

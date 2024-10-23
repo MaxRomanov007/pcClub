@@ -11,6 +11,7 @@ import (
 	"server/internal/config"
 	"server/internal/lib/cookie"
 	"server/internal/lib/logger/sl"
+	"server/internal/lib/request/urlGet"
 	"server/internal/lib/response"
 	"server/internal/models"
 	"server/internal/services/pcClub/auth"
@@ -83,13 +84,7 @@ type UserService interface {
 	) (err error)
 }
 
-type PcService interface {
-	Pcs(
-		ctx context.Context,
-		typeId int64,
-		isAvailable bool,
-	) (pcs []models.PcData, err error)
-
+type PcTypeService interface {
 	PcTypes(
 		ctx context.Context,
 		limit int64,
@@ -111,15 +106,6 @@ type PcService interface {
 		ram *models.RamData,
 	) (err error)
 
-	SavePc(
-		ctx context.Context,
-		typeId int64,
-		roomId int64,
-		row int,
-		place int,
-		description string,
-	) (err error)
-
 	UpdatePcType(
 		ctx context.Context,
 		typeId int64,
@@ -129,6 +115,28 @@ type PcService interface {
 		videoCard *models.VideoCardData,
 		monitor *models.MonitorData,
 		ram *models.RamData,
+	) (err error)
+
+	DeletePcType(
+		ctx context.Context,
+		typeId int64,
+	) (err error)
+}
+
+type PcService interface {
+	Pcs(
+		ctx context.Context,
+		typeId int64,
+		isAvailable bool,
+	) (pcs []models.PcData, err error)
+
+	SavePc(
+		ctx context.Context,
+		typeId int64,
+		roomId int64,
+		row int,
+		place int,
+		description string,
 	) (err error)
 
 	UpdatePc(
@@ -142,18 +150,42 @@ type PcService interface {
 		description string,
 	) (err error)
 
-	DeletePcType(
+	DeletePc(
 		ctx context.Context,
-		typeId int64,
+		pcId int64,
+	) (err error)
+}
+
+type PcRoomService interface {
+	PcRoom(
+		ctx context.Context,
+		pcId int64,
+	) (pcRoom models.PcRoom, err error)
+
+	SavePcRoom(
+		ctx context.Context,
+		pcRoom models.PcRoom,
+	) (err error)
+
+	UpdatePcRoom(
+		ctx context.Context,
+		pcRoom models.PcRoom,
+	) (err error)
+
+	DeletePcRoom(
+		ctx context.Context,
+		pcId int64,
 	) (err error)
 }
 
 type API struct {
-	Log         *slog.Logger
-	Cfg         *config.Config
-	UserService UserService
-	AuthService AuthService
-	PcService   PcService
+	Log           *slog.Logger
+	Cfg           *config.Config
+	UserService   UserService
+	AuthService   AuthService
+	PcTypeService PcTypeService
+	PcService     PcService
+	PcRoomService PcRoomService
 }
 
 func New(
@@ -161,18 +193,27 @@ func New(
 	cfg *config.Config,
 	userService UserService,
 	authService AuthService,
+	pcTypeService PcTypeService,
 	pcService PcService,
+	pcRoomService PcRoomService,
 ) *API {
 	return &API{
-		Log:         log,
-		Cfg:         cfg,
-		UserService: userService,
-		AuthService: authService,
-		PcService:   pcService,
+		Log:           log,
+		Cfg:           cfg,
+		UserService:   userService,
+		AuthService:   authService,
+		PcTypeService: pcTypeService,
+		PcService:     pcService,
+		PcRoomService: pcRoomService,
 	}
 }
 
-func (a *API) decodeAndValidateRequest(w http.ResponseWriter, r *http.Request, log *slog.Logger, req any) bool {
+func (a *API) decodeAndValidateJSONRequest(
+	w http.ResponseWriter,
+	r *http.Request,
+	log *slog.Logger,
+	req any,
+) bool {
 	if err := render.DecodeJSON(r.Body, &req); err != nil {
 		log.Error("failed to decode request body", sl.Err(err))
 		response.Internal(w)
@@ -183,6 +224,23 @@ func (a *API) decodeAndValidateRequest(w http.ResponseWriter, r *http.Request, l
 		return false
 	}
 
+	return true
+}
+
+func (a *API) decodeAndValidateGETRequest(
+	w http.ResponseWriter,
+	r *http.Request,
+	log *slog.Logger,
+	req any,
+) bool {
+	if err := urlGet.Decode(r, req); err != nil {
+		log.Error("failed to decode get request", sl.Err(err))
+		response.Internal(w)
+		return false
+	}
+	if !a.validateRequest(w, req, log) {
+		return false
+	}
 	return true
 }
 

@@ -3,10 +3,12 @@ package ssms
 import (
 	"database/sql"
 	"fmt"
+	"github.com/Masterminds/squirrel"
 	_ "github.com/denisenkom/go-mssqldb"
-	sqld "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"
 	"net/url"
+	"reflect"
+	"regexp"
 	"server/internal/config"
 	"strconv"
 	"strings"
@@ -44,26 +46,6 @@ func New(cfg *config.SQLServerConfig) (*Storage, error) {
 	}, nil
 }
 
-func handleError(err error) error {
-	if driverErr, ok := err.(sqld.Error); ok {
-		switch driverErr.Number {
-		case 2627: // Нарушение уникального индекса
-			return ErrAlreadyExists
-		case 547: // Нарушение внешнего ключа
-			return ErrReferenceNotExists
-		case 8152: // Строка слишком длинная для столбца
-			return ErrTooLong
-		case 515: // Попытка вставить NULL в столбец, который не допускает NULL
-			return ErrNullPointer
-		case 54332:
-			return ErrCheckFailed
-		default:
-			return err
-		}
-	}
-	return err
-}
-
 func replacePositionalParams(query string, args []interface{}) string {
 	for i := range args {
 		param := fmt.Sprintf("@p%d", i+1)
@@ -78,4 +60,25 @@ func nullString(s string) sql.Null[string] {
 		nullable.Valid = true
 	}
 	return nullable
+}
+
+func setIfNotZeroNullString(stmt squirrel.UpdateBuilder, columnName string, str string) squirrel.UpdateBuilder {
+	if match, err := regexp.MatchString("[Nn][Uu][Ll][Ll]", str); err == nil && match {
+		stmt = stmt.Set(columnName, sql.Null[string]{})
+	} else {
+		stmt = setIfNotZero(stmt, columnName, str)
+	}
+	return stmt
+}
+func setIfNotZero(stmt squirrel.UpdateBuilder, columnName string, a any) squirrel.UpdateBuilder {
+	if !isZero(a) {
+		stmt = stmt.Set(columnName, a)
+	}
+	return stmt
+}
+func isZero(a any) bool {
+	if reflect.ValueOf(a).Interface() == reflect.Zero(reflect.TypeOf(a)).Interface() {
+		return true
+	}
+	return false
 }

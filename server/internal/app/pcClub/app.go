@@ -47,13 +47,19 @@ func New(cfg *config.HTTPSServerConfig, api *pcCLub.API) *App {
 
 	router.Get("/pc-types", api.PcTypes())
 	router.Get("/pcs", api.Pcs())
-	router.Get("/pc-type/{type_id}", api.PcType())
+	router.Get("/pc-type/{type-id}", api.PcType())
 
 	router.Post("/save-pc", api.SavePc())
 	router.Post("/save-pc-type", api.SavePcType())
 	router.Post("/update-pc-type", api.UpdatePcType())
 	router.Post("/update-pc", api.UpdatePc())
 	router.Post("/delete-pc-type", api.DeletePcType())
+	router.Post("/delete-pc", api.DeletePc())
+
+	router.Get("/pc-room/{room-id}", api.PcRoom())
+	router.Post("/save-pc-room", api.SavePcRoom())
+	router.Post("/update-pc-room", api.UpdatePcRoom())
+	router.Post("/delete-pc-room", api.DeletePcRoom())
 
 	srv := &http.Server{
 		Addr:         cfg.Address,

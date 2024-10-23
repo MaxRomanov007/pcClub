@@ -9,6 +9,8 @@ import (
 	pcClubServer "server/internal/http-server/handlers/pcCLub"
 	"server/internal/services/pcClub/auth"
 	"server/internal/services/pcClub/pc"
+	"server/internal/services/pcClub/pcRoom"
+	"server/internal/services/pcClub/pcType"
 	"server/internal/services/pcClub/user"
 	"server/internal/storage/redis"
 	"server/internal/storage/ssms"
@@ -50,9 +52,19 @@ func New(
 
 	authService := auth.New(cfg.Auth, redisStorage, redisStorage, sqlserverStorage, sqlserverStorage)
 	userService := user.New(cfg.User, sqlserverStorage, sqlserverStorage)
-	pcService := pc.New(redisStorage, redisStorage, sqlserverStorage, sqlserverStorage)
+	pcTypeService := pcType.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
+	pcService := pc.New(sqlserverStorage, sqlserverStorage)
+	pcRoomService := pcRoom.New(redisStorage, redisStorage, sqlserverStorage, sqlserverStorage)
 
-	pcClubApi := pcClubServer.New(log, cfg, userService, authService, pcService)
+	pcClubApi := pcClubServer.New(
+		log,
+		cfg,
+		userService,
+		authService,
+		pcTypeService,
+		pcService,
+		pcRoomService,
+	)
 
 	pcClubApplication := pcClubApp.New(cfg.HttpsServer, pcClubApi)
 

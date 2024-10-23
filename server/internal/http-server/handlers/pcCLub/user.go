@@ -37,7 +37,7 @@ func (a *API) Register() http.HandlerFunc {
 		log := a.log(op, r)
 
 		var req RegisterRequest
-		if !a.decodeAndValidateRequest(w, r, log, &req) {
+		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
 			return
 		}
 
@@ -83,7 +83,7 @@ func (a *API) Login() http.HandlerFunc {
 		log := a.log(op, r)
 
 		var req LoginRequest
-		if !a.decodeAndValidateRequest(w, r, log, &req) {
+		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
 			return
 		}
 

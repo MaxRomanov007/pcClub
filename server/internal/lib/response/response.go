@@ -6,12 +6,17 @@ import (
 	"net/http"
 	"server/internal/services/pcClub/auth"
 	"server/internal/services/pcClub/pc"
+	"server/internal/services/pcClub/pcRoom"
 	"server/internal/services/pcClub/user"
 	"strings"
 )
 
 func Internal(w http.ResponseWriter) {
 	http.Error(w, "internal error", http.StatusInternalServerError)
+}
+
+func BadRequest(w http.ResponseWriter, message string) {
+	http.Error(w, message, http.StatusBadRequest)
 }
 
 func Unauthorized(w http.ResponseWriter, message string) {
@@ -69,6 +74,17 @@ func UserError(w http.ResponseWriter, err *user.Error) {
 		http.Error(w, err.Error(), http.StatusConflict)
 	case user.ErrAccessDeniedCode, user.ErrInvalidCredentialsCode:
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+	default:
+		Internal(w)
+	}
+}
+
+func PcRoomError(w http.ResponseWriter, err *pcRoom.Error) {
+	switch err.Code {
+	case pcRoom.ErrNotFoundCode:
+		http.Error(w, err.Error(), http.StatusNotFound)
+	case pcRoom.ErrAlreadyExistsCode, pcRoom.ErrReferenceNotExistsCode:
+		http.Error(w, err.Error(), http.StatusConflict)
 	default:
 		Internal(w)
 	}

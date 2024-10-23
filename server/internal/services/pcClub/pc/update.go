@@ -4,40 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"server/internal/models"
 	"server/internal/storage/ssms"
 )
-
-func (s *Service) UpdatePcType(
-	ctx context.Context,
-	typeId int64,
-	name string,
-	description string,
-	processor *models.ProcessorData,
-	videoCard *models.VideoCardData,
-	monitor *models.MonitorData,
-	ram *models.RamData,
-) error {
-	const op = "services.pcClub.pc.UpdatePcType"
-
-	if err := s.owner.UpdatePcType(
-		ctx,
-		typeId,
-		name,
-		description,
-		processor,
-		videoCard,
-		monitor,
-		ram,
-	); err != nil {
-		if errors.Is(err, ssms.ErrNotFound) {
-			return fmt.Errorf("%s: %w", op, ErrNotFound)
-		}
-		return fmt.Errorf("%s: failed to update pc type: %w", op, err)
-	}
-
-	return nil
-}
 
 func (s *Service) UpdatePc(
 	ctx context.Context,
@@ -61,14 +29,9 @@ func (s *Service) UpdatePc(
 		place,
 		description,
 	); err != nil {
-		if errors.Is(err, ssms.ErrCheckFailed) {
-			return fmt.Errorf("%s: %w", op, ErrConstraint.WithDesc("pc row or place greater than room"))
-		}
-		if errors.Is(err, ssms.ErrAlreadyExists) {
-			return fmt.Errorf("%s: %w", op, ErrAlreadyExists)
-		}
-		if errors.Is(err, ssms.ErrReferenceNotExists) {
-			return fmt.Errorf("%s: %w", op, ErrReferenceNotExists)
+		var ssmsErr *ssms.Error
+		if errors.As(err, &ssmsErr) {
+			return fmt.Errorf("%s: %w", op, handleStorageError(ssmsErr))
 		}
 		return fmt.Errorf("%s: failed to update pc: %w", op, err)
 	}
