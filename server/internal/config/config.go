@@ -49,7 +49,7 @@ type DishesImagesConfig struct {
 
 type ImagesConfig struct {
 	PCS    *PCSImagesConfig    `yaml:"pcs"`
-	Dishes *DishesImagesConfig `yaml:"dishes"`
+	Dishes *DishesImagesConfig `yaml:"dish"`
 }
 
 type AccessTokenConfig struct {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"server/internal/services/pcClub/auth"
 	"server/internal/services/pcClub/components"
+	"server/internal/services/pcClub/dish"
 	"server/internal/services/pcClub/pc"
 	"server/internal/services/pcClub/pcRoom"
 	"server/internal/services/pcClub/user"
@@ -14,10 +15,6 @@ import (
 
 func Internal(w http.ResponseWriter) {
 	http.Error(w, "internal error", http.StatusInternalServerError)
-}
-
-func BadRequest(w http.ResponseWriter, message string) {
-	http.Error(w, message, http.StatusBadRequest)
 }
 
 func Unauthorized(w http.ResponseWriter, message string) {
@@ -92,6 +89,19 @@ func PcRoomError(w http.ResponseWriter, err *pcRoom.Error) {
 }
 
 func ComponentsError(w http.ResponseWriter, err *components.Error) {
+	switch err.Code {
+	case components.ErrNotFoundCode:
+		http.Error(w, "not found", http.StatusNotFound)
+	case components.ErrAlreadyExistsCode:
+		http.Error(w, "already exists", http.StatusConflict)
+	case components.ErrReferenceNotExistsCode:
+		http.Error(w, "reference doesnt exists", http.StatusConflict)
+	default:
+		Internal(w)
+	}
+}
+
+func DishError(w http.ResponseWriter, err *dish.Error) {
 	switch err.Code {
 	case components.ErrNotFoundCode:
 		http.Error(w, "not found", http.StatusNotFound)

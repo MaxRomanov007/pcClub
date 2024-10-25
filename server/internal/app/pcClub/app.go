@@ -89,6 +89,12 @@ func New(cfg *config.HTTPSServerConfig, api *pcCLub.API) *App {
 	router.Post("/delete-ram-type", api.DeleteRamType())
 	router.Post("/delete-ram", api.DeleteRam())
 
+	router.Get("/dishes", api.Dishes())
+	router.Get("/dish/{dish-id}", api.Dish())
+	router.Post("/save-dish", api.SaveDish())
+	router.Post("/update-dish", api.UpdateDish())
+	router.Post("/delete-dish", api.DeleteDish())
+
 	srv := &http.Server{
 		Addr:         cfg.Address,
 		Handler:      router,

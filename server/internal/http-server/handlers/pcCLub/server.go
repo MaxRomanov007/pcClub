@@ -309,6 +309,34 @@ type ComponentsService struct {
 	Ram       RamService
 }
 
+type DishService interface {
+	Dishes(
+		ctx context.Context,
+		limit int64,
+		offset int64,
+	) (dishes []models.DishData, err error)
+
+	Dish(
+		ctx context.Context,
+		dishId int64,
+	) (dish models.DishData, err error)
+
+	SaveDish(
+		ctx context.Context,
+		dish models.DishData,
+	) (err error)
+
+	UpdateDish(
+		ctx context.Context,
+		dish models.DishData,
+	) (err error)
+
+	DeleteDish(
+		ctx context.Context,
+		dishId int64,
+	) (err error)
+}
+
 type API struct {
 	Log               *slog.Logger
 	Cfg               *config.Config
@@ -318,6 +346,7 @@ type API struct {
 	PcService         PcService
 	PcRoomService     PcRoomService
 	ComponentsService ComponentsService
+	DishService       DishService
 }
 
 func New(
@@ -329,6 +358,7 @@ func New(
 	pcService PcService,
 	pcRoomService PcRoomService,
 	componentsService ComponentsService,
+	dishService DishService,
 ) *API {
 	return &API{
 		Log:               log,
@@ -339,6 +369,7 @@ func New(
 		PcService:         pcService,
 		PcRoomService:     pcRoomService,
 		ComponentsService: componentsService,
+		DishService:       dishService,
 	}
 }
 

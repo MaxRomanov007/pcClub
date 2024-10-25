@@ -8,7 +8,7 @@ type DishStatus struct {
 	Name         string `db:"name"`
 }
 
-// Dish represents the dishes table.
+// Dish represents the dish table.
 type Dish struct {
 	DishID       int64   `db:"dish_id"`
 	DishStatusID int64   `db:"dish_status_id"`
@@ -17,6 +17,16 @@ type Dish struct {
 	Cost         float64 `db:"cost"`
 	Description  string  `db:"description"`
 	DishStatus   *DishStatus
+}
+
+type DishData struct {
+	Id          int64   `db:"dish_id" json:"id"`
+	StatusId    int64   `db:"dish_status_id" json:"status_id"`
+	Status      string  `db:"status" json:"status"`
+	Name        string  `db:"name" json:"name"`
+	Calories    int16   `db:"calories" json:"calories"`
+	Cost        float64 `db:"cost" json:"cost"`
+	Description string  `db:"description" json:"description"`
 }
 
 // DishImage represents the dish_images table.
