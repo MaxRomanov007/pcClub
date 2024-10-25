@@ -178,14 +178,146 @@ type PcRoomService interface {
 	) (err error)
 }
 
+type ProcessorService interface {
+	ProcessorProducers(
+		ctx context.Context,
+	) (producers []models.ProcessorProducer, err error)
+
+	Processors(
+		ctx context.Context,
+		producerId int64,
+	) (processors []models.Processor, err error)
+
+	SaveProcessorProducer(
+		ctx context.Context,
+		name string,
+	) (err error)
+
+	SaveProcessor(
+		ctx context.Context,
+		processor models.Processor,
+	) (err error)
+
+	DeleteProcessorProducer(
+		ctx context.Context,
+		producerId int64,
+	) (err error)
+
+	DeleteProcessor(
+		ctx context.Context,
+		processorId int64,
+	) (err error)
+}
+
+type MonitorService interface {
+	MonitorProducers(
+		ctx context.Context,
+	) (producers []models.MonitorProducer, err error)
+
+	Monitors(
+		ctx context.Context,
+		producerId int64,
+	) (monitors []models.Monitor, err error)
+
+	SaveMonitorProducer(
+		ctx context.Context,
+		name string,
+	) (err error)
+
+	SaveMonitor(
+		ctx context.Context,
+		monitor models.Monitor,
+	) (err error)
+
+	DeleteMonitorProducer(
+		ctx context.Context,
+		producerId int64,
+	) (err error)
+
+	DeleteMonitor(
+		ctx context.Context,
+		monitorId int64,
+	) (err error)
+}
+
+type VideoCardService interface {
+	VideoCardProducers(
+		ctx context.Context,
+	) (producers []models.VideoCardProducer, err error)
+
+	VideoCards(
+		ctx context.Context,
+		producerId int64,
+	) (videoCards []models.VideoCard, err error)
+
+	SaveVideoCardProducer(
+		ctx context.Context,
+		name string,
+	) (err error)
+
+	SaveVideoCard(
+		ctx context.Context,
+		videoCard models.VideoCard,
+	) (err error)
+
+	DeleteVideoCardProducer(
+		ctx context.Context,
+		producerId int64,
+	) (err error)
+
+	DeleteVideoCard(
+		ctx context.Context,
+		videoCardId int64,
+	) (err error)
+}
+
+type RamService interface {
+	RamTypes(
+		ctx context.Context,
+	) (producers []models.RamType, err error)
+
+	Rams(
+		ctx context.Context,
+		typeId int64,
+	) (rams []models.Ram, err error)
+
+	SaveRamType(
+		ctx context.Context,
+		name string,
+	) (err error)
+
+	SaveRam(
+		ctx context.Context,
+		ram models.Ram,
+	) (err error)
+
+	DeleteRamType(
+		ctx context.Context,
+		typeId int64,
+	) (err error)
+
+	DeleteRam(
+		ctx context.Context,
+		ramId int64,
+	) (err error)
+}
+
+type ComponentsService struct {
+	Processor ProcessorService
+	Monitor   MonitorService
+	VideoCard VideoCardService
+	Ram       RamService
+}
+
 type API struct {
-	Log           *slog.Logger
-	Cfg           *config.Config
-	UserService   UserService
-	AuthService   AuthService
-	PcTypeService PcTypeService
-	PcService     PcService
-	PcRoomService PcRoomService
+	Log               *slog.Logger
+	Cfg               *config.Config
+	UserService       UserService
+	AuthService       AuthService
+	PcTypeService     PcTypeService
+	PcService         PcService
+	PcRoomService     PcRoomService
+	ComponentsService ComponentsService
 }
 
 func New(
@@ -196,15 +328,17 @@ func New(
 	pcTypeService PcTypeService,
 	pcService PcService,
 	pcRoomService PcRoomService,
+	componentsService ComponentsService,
 ) *API {
 	return &API{
-		Log:           log,
-		Cfg:           cfg,
-		UserService:   userService,
-		AuthService:   authService,
-		PcTypeService: pcTypeService,
-		PcService:     pcService,
-		PcRoomService: pcRoomService,
+		Log:               log,
+		Cfg:               cfg,
+		UserService:       userService,
+		AuthService:       authService,
+		PcTypeService:     pcTypeService,
+		PcService:         pcService,
+		PcRoomService:     pcRoomService,
+		ComponentsService: componentsService,
 	}
 }
 

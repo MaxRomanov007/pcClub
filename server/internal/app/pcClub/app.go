@@ -61,6 +61,34 @@ func New(cfg *config.HTTPSServerConfig, api *pcCLub.API) *App {
 	router.Post("/update-pc-room", api.UpdatePcRoom())
 	router.Post("/delete-pc-room", api.DeletePcRoom())
 
+	router.Get("/monitor-producers", api.MonitorProducers())
+	router.Get("/monitors", api.Monitors())
+	router.Post("/save-monitor-producer", api.SaveMonitorProducer())
+	router.Post("/save-monitor", api.SaveMonitor())
+	router.Post("/delete-monitor-producer", api.DeleteMonitorProducer())
+	router.Post("/delete-monitor", api.DeleteMonitor())
+
+	router.Get("/processor-producers", api.ProcessorProducers())
+	router.Get("/processors", api.Processors())
+	router.Post("/save-processor-producer", api.SaveProcessorProducer())
+	router.Post("/save-processor", api.SaveProcessor())
+	router.Post("/delete-processor-producer", api.DeleteProcessorProducer())
+	router.Post("/delete-processor", api.DeleteProcessor())
+
+	router.Get("/video-card-producers", api.VideoCardProducers())
+	router.Get("/video-cards", api.VideoCards())
+	router.Post("/save-video-card-producer", api.SaveVideoCardProducer())
+	router.Post("/save-video-card", api.SaveVideoCard())
+	router.Post("/delete-video-card-producer", api.DeleteVideoCardProducer())
+	router.Post("/delete-video-card", api.DeleteVideoCard())
+
+	router.Get("/ram-types", api.RamTypes())
+	router.Get("/ram", api.Rams())
+	router.Post("/save-ram-type", api.SaveRamType())
+	router.Post("/save-ram", api.SaveRam())
+	router.Post("/delete-ram-type", api.DeleteRamType())
+	router.Post("/delete-ram", api.DeleteRam())
+
 	srv := &http.Server{
 		Addr:         cfg.Address,
 		Handler:      router,

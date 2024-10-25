@@ -8,6 +8,10 @@ import (
 	"server/internal/config"
 	pcClubServer "server/internal/http-server/handlers/pcCLub"
 	"server/internal/services/pcClub/auth"
+	"server/internal/services/pcClub/components/monitor"
+	"server/internal/services/pcClub/components/processor"
+	"server/internal/services/pcClub/components/ram"
+	"server/internal/services/pcClub/components/videoCard"
 	"server/internal/services/pcClub/pc"
 	"server/internal/services/pcClub/pcRoom"
 	"server/internal/services/pcClub/pcType"
@@ -55,6 +59,10 @@ func New(
 	pcTypeService := pcType.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
 	pcService := pc.New(sqlserverStorage, sqlserverStorage)
 	pcRoomService := pcRoom.New(redisStorage, redisStorage, sqlserverStorage, sqlserverStorage)
+	processorService := processor.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
+	monitorService := monitor.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
+	videoCardService := videoCard.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
+	ramService := ram.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
 
 	pcClubApi := pcClubServer.New(
 		log,
@@ -64,6 +72,12 @@ func New(
 		pcTypeService,
 		pcService,
 		pcRoomService,
+		pcClubServer.ComponentsService{
+			Processor: processorService,
+			Monitor:   monitorService,
+			VideoCard: videoCardService,
+			Ram:       ramService,
+		},
 	)
 
 	pcClubApplication := pcClubApp.New(cfg.HttpsServer, pcClubApi)

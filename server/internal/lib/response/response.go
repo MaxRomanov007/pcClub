@@ -5,6 +5,7 @@ import (
 	"github.com/go-playground/validator"
 	"net/http"
 	"server/internal/services/pcClub/auth"
+	"server/internal/services/pcClub/components"
 	"server/internal/services/pcClub/pc"
 	"server/internal/services/pcClub/pcRoom"
 	"server/internal/services/pcClub/user"
@@ -85,6 +86,19 @@ func PcRoomError(w http.ResponseWriter, err *pcRoom.Error) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case pcRoom.ErrAlreadyExistsCode, pcRoom.ErrReferenceNotExistsCode:
 		http.Error(w, err.Error(), http.StatusConflict)
+	default:
+		Internal(w)
+	}
+}
+
+func ComponentsError(w http.ResponseWriter, err *components.Error) {
+	switch err.Code {
+	case components.ErrNotFoundCode:
+		http.Error(w, "not found", http.StatusNotFound)
+	case components.ErrAlreadyExistsCode:
+		http.Error(w, "already exists", http.StatusConflict)
+	case components.ErrReferenceNotExistsCode:
+		http.Error(w, "reference doesnt exists", http.StatusConflict)
 	default:
 		Internal(w)
 	}

@@ -15,6 +15,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jmoiron/sqlx v1.4.0
 	golang.org/x/crypto v0.23.0
+	golang.org/x/net v0.21.0
 )
 
 require (
