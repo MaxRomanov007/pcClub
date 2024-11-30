@@ -8,24 +8,30 @@ import (
 type provider interface {
 	PcRoom(
 		ctx context.Context,
-		pcId int64,
-	) (pcRoom models.PcRoom, err error)
+		roomID int64,
+	) (room models.PcRoom, err error)
+
+	PcRooms(
+		ctx context.Context,
+		pcTypeId int64,
+	) (rooms []models.PcRoom, err error)
 }
 
 type owner interface {
 	SavePcRoom(
 		ctx context.Context,
-		pcRoom models.PcRoom,
-	) (err error)
+		room *models.PcRoom,
+	) (id int64, err error)
 
 	UpdatePcRoom(
 		ctx context.Context,
-		pcRoom models.PcRoom,
+		roomID int64,
+		room *models.PcRoom,
 	) (err error)
 
 	DeletePcRoom(
 		ctx context.Context,
-		roomId int64,
+		roomID int64,
 	) (err error)
 }
 

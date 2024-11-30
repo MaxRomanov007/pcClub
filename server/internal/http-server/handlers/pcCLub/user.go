@@ -4,8 +4,9 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
 	"server/internal/services/pcClub/auth"
 	"server/internal/services/pcClub/user"
 )
@@ -36,8 +37,8 @@ func (a *API) Register() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req RegisterRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[RegisterRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -68,7 +69,7 @@ func (a *API) Register() http.HandlerFunc {
 			return
 		}
 
-		a.setRefreshCookie(w, refresh)
+		response.SetRefreshCookie(w, a.Cfg.Auth, refresh)
 
 		render.JSON(w, r, RegisterResponse{
 			Access: access,
@@ -82,8 +83,8 @@ func (a *API) Login() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req LoginRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[LoginRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -114,7 +115,7 @@ func (a *API) Login() http.HandlerFunc {
 			return
 		}
 
-		a.setRefreshCookie(w, refresh)
+		response.SetRefreshCookie(w, a.Cfg.Auth, refresh)
 
 		render.JSON(w, r, LoginResponse{
 			Access: access,
@@ -128,7 +129,7 @@ func (a *API) Refresh() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		refresh := a.getRefreshToken(w, r, log)
+		refresh := request.RefreshToken(w, r, log, a.Cfg.Auth.Refresh.CookieName)
 		if refresh == "" {
 			return
 		}
@@ -146,7 +147,7 @@ func (a *API) Refresh() http.HandlerFunc {
 			return
 		}
 
-		a.setRefreshCookie(w, refresh)
+		response.SetRefreshCookie(w, a.Cfg.Auth, refresh)
 
 		render.JSON(w, r, LoginResponse{
 			Access: access,
@@ -160,10 +161,7 @@ func (a *API) User() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		uid := a.authorizeRequest(w, r, log)
-		if uid == 0 {
-			return
-		}
+		uid := request.MustUID(r)
 
 		userData, err := a.UserService.User(r.Context(), uid)
 		if err != nil {
@@ -188,12 +186,12 @@ func (a *API) Logout() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		access := a.getAccessToken(w, r, log)
+		access := request.AccessToken(w, r, log)
 		if access == "" {
 			return
 		}
 
-		refreshToken := a.getRefreshToken(w, r, log)
+		refreshToken := request.RefreshToken(w, r, log, a.Cfg.Auth.Refresh.CookieName)
 		if refreshToken == "" {
 			return
 		}

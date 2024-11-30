@@ -30,10 +30,9 @@ type versionProvider interface {
 }
 
 type versionOwner interface {
-	UpdateRefreshVersion(
+	IncRefreshVersion(
 		ctx context.Context,
 		uid int64,
-		version int64,
 	) (err error)
 }
 
@@ -44,6 +43,11 @@ type Service struct {
 	versionProvider versionProvider
 	versionOwner    versionOwner
 }
+
+const (
+	RefreshRedisBlackListName = "refresh_black_list_exp"
+	AccessRedisBlackListName  = "access_black_list_exp"
+)
 
 func New(
 	cfg *config.AuthConfig,

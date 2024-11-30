@@ -4,8 +4,9 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
 	"server/internal/models"
 	"server/internal/services/pcClub/components"
 )
@@ -60,8 +61,8 @@ func (a *API) Rams() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req RamsRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[RamsRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -88,16 +89,15 @@ func (a *API) SaveRamType() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveRamTypeRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveRamTypeRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		ramType := models.RAMType{
+			Name: req.Name,
 		}
-
-		if err := a.ComponentsService.Ram.SaveRamType(r.Context(), req.Name); err != nil {
+		if _, err := a.ComponentsService.Ram.SaveRamType(r.Context(), &ramType); err != nil {
 			var serviceErr *components.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("component error", sl.Err(err))
@@ -108,6 +108,8 @@ func (a *API) SaveRamType() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, ramType)
 	}
 }
 
@@ -117,19 +119,16 @@ func (a *API) SaveRam() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveRamRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveRamRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
-		}
-
-		if err := a.ComponentsService.Ram.SaveRam(r.Context(), models.Ram{
-			RamTypeID: req.TypeId,
+		ram := models.RAM{
+			RAMTypeID: req.TypeId,
 			Capacity:  req.Capacity,
-		}); err != nil {
+		}
+		if _, err := a.ComponentsService.Ram.SaveRam(r.Context(), &ram); err != nil {
 			var serviceErr *components.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("component error", sl.Err(err))
@@ -140,6 +139,8 @@ func (a *API) SaveRam() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, ram)
 	}
 }
 
@@ -149,12 +150,8 @@ func (a *API) DeleteRamType() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeleteRamTypeRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteRamTypeRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -178,12 +175,8 @@ func (a *API) DeleteRam() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeleteRamRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteRamRequest](w, r, log)
+		if !ok {
 			return
 		}
 

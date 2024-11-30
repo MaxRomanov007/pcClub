@@ -4,19 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
 	"server/internal/storage/redis"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) PcTypes(
 	ctx context.Context,
-	limit int64,
-	offset int64,
-) ([]models.PcTypeData, error) {
+	limit int,
+	offset int,
+) ([]models.PcType, error) {
 	const op = "services.pcClub.pc.pcTypes"
 
-	var pcTypes []models.PcTypeData
+	var pcTypes []models.PcType
 	err := s.redisProvider.Value(
 		ctx,
 		fmt.Sprintf("pc_types:%d-%d", limit, offset),
@@ -26,16 +26,12 @@ func (s *Service) PcTypes(
 		return pcTypes, nil
 	}
 	if !errors.Is(err, redis.ErrNotFound) {
-		return nil, fmt.Errorf("%s: failed to get pc types from redis: %w", op, err)
+		return nil, errors2.WithMessage(err, op, "failed to get pc types from redis")
 	}
 
 	pcTypes, err = s.provider.PcTypes(ctx, limit, offset)
 	if err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return nil, fmt.Errorf("%s: %w", op, handleStorageError(ssmsErr))
-		}
-		return nil, fmt.Errorf("%s: failed to get pc types from sql: %w", op, err)
+		return nil, errors2.WithMessage(HandleStorageError(err), op, "failed to get pc types from mssql")
 	}
 
 	err = s.redisOwner.Set(
@@ -44,7 +40,7 @@ func (s *Service) PcTypes(
 		pcTypes,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: failed to insert pc types into redis: %w", op, err)
+		return nil, errors2.WithMessage(err, op, "failed to save pc types in redis")
 	}
 
 	return pcTypes, nil
@@ -52,39 +48,35 @@ func (s *Service) PcTypes(
 
 func (s *Service) PcType(
 	ctx context.Context,
-	typeId int64,
-) (models.PcTypeData, error) {
+	typeID int64,
+) (models.PcType, error) {
 	const op = "services.pcClub.pc.pcType"
 
-	var pcType models.PcTypeData
+	var pcType models.PcType
 	err := s.redisProvider.Value(
 		ctx,
-		fmt.Sprintf("pc_type:%d", typeId),
+		fmt.Sprintf("pc_type:%d", typeID),
 		&pcType,
 	)
 	if err == nil {
 		return pcType, nil
 	}
 	if !errors.Is(err, redis.ErrNotFound) {
-		return models.PcTypeData{}, fmt.Errorf("%s: failed to get pc type from redis: %w", op, err)
+		return models.PcType{}, errors2.WithMessage(err, op, "failed to get pc type from redis")
 	}
 
-	pcType, err = s.provider.PcType(ctx, typeId)
+	pcType, err = s.provider.PcType(ctx, typeID)
 	if err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return models.PcTypeData{}, fmt.Errorf("%s: %w", op, handleStorageError(ssmsErr))
-		}
-		return models.PcTypeData{}, fmt.Errorf("%s: failed to get pc type from sql: %w", op, err)
+		return models.PcType{}, errors2.WithMessage(HandleStorageError(err), op, "failed to get pc type from mssql")
 	}
 
 	err = s.redisOwner.Set(
 		ctx,
-		fmt.Sprintf("pc_type:%d", typeId),
+		fmt.Sprintf("pc_type:%d", typeID),
 		pcType,
 	)
 	if err != nil {
-		return models.PcTypeData{}, fmt.Errorf("%s: failed to insert pc type into redis: %w", op, err)
+		return models.PcType{}, errors2.WithMessage(HandleStorageError(err), op, "failed to save pc type in redis")
 	}
 
 	return pcType, nil

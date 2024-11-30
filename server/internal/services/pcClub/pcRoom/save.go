@@ -2,25 +2,20 @@ package pcRoom
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) SavePcRoom(
 	ctx context.Context,
-	pcRoom models.PcRoom,
-) error {
+	pcRoom *models.PcRoom,
+) (int64, error) {
 	const op = "services.pcClub.pcClub.SavePcRoom"
 
-	if err := s.owner.SavePcRoom(ctx, pcRoom); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, handleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to save pc room: %w", op, err)
+	id, err := s.owner.SavePcRoom(ctx, pcRoom)
+	if err != nil {
+		return 0, errors2.WithMessage(HandleStorageError(err), op, "failed to save pc room in mssql")
 	}
 
-	return nil
+	return id, nil
 }

@@ -2,43 +2,35 @@ package ram
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"server/internal/lib/errors"
 	"server/internal/models"
 	"server/internal/services/pcClub/components"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) SaveRamType(
 	ctx context.Context,
-	name string,
-) error {
+	ramType *models.RAMType,
+) (int64, error) {
 	const op = "services.pcClub.components.ram.SaveRamType"
 
-	if err := s.owner.SaveRamType(ctx, name); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to save ram type: %w", op, err)
+	id, err := s.owner.SaveRamType(ctx, ramType)
+	if err != nil {
+		return 0, errors.WithMessage(components.HandleStorageError(err), op, "failed to save ram type in mssql")
 	}
 
-	return nil
+	return id, nil
 }
 
 func (s *Service) SaveRam(
 	ctx context.Context,
-	ram models.Ram,
-) error {
+	ram *models.RAM,
+) (int64, error) {
 	const op = "services.pcClub.components.ram.SaveRam"
 
-	if err := s.owner.SaveRam(ctx, ram); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to save ram: %w", op, err)
+	id, err := s.owner.SaveRam(ctx, ram)
+	if err != nil {
+		return 0, errors.WithMessage(components.HandleStorageError(err), op, "failed to save ram in mssql")
 	}
 
-	return nil
+	return id, nil
 }

@@ -8,25 +8,26 @@ import (
 type provider interface {
 	Dishes(
 		ctx context.Context,
-		limit int64,
-		offset int64,
-	) (dishes []models.DishData, err error)
+		limit int,
+		offset int,
+	) (dishes []models.Dish, err error)
 
 	Dish(
 		ctx context.Context,
 		dishId int64,
-	) (dish models.DishData, err error)
+	) (dish models.Dish, err error)
 }
 
 type owner interface {
 	SaveDish(
 		ctx context.Context,
-		dish models.DishData,
-	) (err error)
+		dish *models.Dish,
+	) (id int64, err error)
 
 	UpdateDish(
 		ctx context.Context,
-		dish models.DishData,
+		dishID int64,
+		dish *models.Dish,
 	) (err error)
 
 	DeleteDish(

@@ -10,7 +10,7 @@ type provider interface {
 	User(
 		ctx context.Context,
 		uid int64,
-	) (user models.UserData, err error)
+	) (user models.User, err error)
 
 	UserByEmail(
 		ctx context.Context,
@@ -26,7 +26,7 @@ type provider interface {
 type owner interface {
 	SaveUser(
 		ctx context.Context,
-		user models.User,
+		user *models.User,
 	) (id int64, err error)
 
 	DeleteUser(

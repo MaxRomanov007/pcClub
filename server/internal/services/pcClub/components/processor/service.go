@@ -12,29 +12,29 @@ type provider interface {
 
 	Processors(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (processors []models.Processor, err error)
 }
 
 type owner interface {
 	SaveProcessorProducer(
 		ctx context.Context,
-		name string,
-	) (err error)
+		producer *models.ProcessorProducer,
+	) (id int64, err error)
 
 	SaveProcessor(
 		ctx context.Context,
-		processor models.Processor,
-	) (err error)
+		processor *models.Processor,
+	) (id int64, err error)
 
 	DeleteProcessorProducer(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (err error)
 
 	DeleteProcessor(
 		ctx context.Context,
-		processorId int64,
+		processorID int64,
 	) (err error)
 }
 
@@ -60,6 +60,10 @@ type Service struct {
 	redisProvider redisProvider
 	redisOwner    redisOwner
 }
+
+const (
+	RedisProcessorProducersKey = "processor_producers"
+)
 
 func New(provider provider, owner owner, redisProvider redisProvider, redisOwner redisOwner) *Service {
 	return &Service{

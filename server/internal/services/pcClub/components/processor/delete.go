@@ -2,24 +2,17 @@ package processor
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"server/internal/services/pcClub/components"
-	"server/internal/storage/ssms"
+	"server/internal/lib/errors"
 )
 
 func (s *Service) DeleteProcessorProducer(
 	ctx context.Context,
-	producerId int64,
+	producerID int64,
 ) error {
 	const op = "services.pcClub.components.processor.DeleteProcessorProducer"
 
-	if err := s.owner.DeleteProcessorProducer(ctx, producerId); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to delete processor producer: %w", op, err)
+	if err := s.owner.DeleteProcessorProducer(ctx, producerID); err != nil {
+		return errors.WithMessage(err, op, "failed to delete processor producer from mssql")
 	}
 
 	return nil
@@ -27,16 +20,12 @@ func (s *Service) DeleteProcessorProducer(
 
 func (s *Service) DeleteProcessor(
 	ctx context.Context,
-	processorId int64,
+	processorID int64,
 ) error {
 	const op = "services.pcClub.components.processor.DeleteProcessor"
 
-	if err := s.owner.DeleteProcessor(ctx, processorId); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to delete processor: %w", op, err)
+	if err := s.owner.DeleteProcessor(ctx, processorID); err != nil {
+		return errors.WithMessage(err, op, "failed to delete processor from mssql")
 	}
 
 	return nil

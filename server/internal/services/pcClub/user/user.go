@@ -3,24 +3,21 @@ package user
 import (
 	"context"
 	"errors"
-	"fmt"
 	"golang.org/x/crypto/bcrypt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
-	"server/internal/storage/ssms"
+	"server/internal/storage/mssql"
 )
 
 func (s *Service) User(
 	ctx context.Context,
 	uid int64,
-) (models.UserData, error) {
+) (models.User, error) {
 	const op = "services.pcClub.user.User"
 
 	user, err := s.userProvider.User(ctx, uid)
-	if errors.Is(err, ssms.ErrNotFound) {
-		return models.UserData{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
-	}
 	if err != nil {
-		return models.UserData{}, fmt.Errorf("%s: failed to get user: %w", op, err)
+		return models.User{}, errors2.WithMessage(HandleStorageError(err), op, "failed to get user from mssql")
 	}
 
 	return user, nil
@@ -33,11 +30,8 @@ func (s *Service) UserByEmail(
 	const op = "services.pcClub.user.UserByEmail"
 
 	user, err := s.userProvider.UserByEmail(ctx, email)
-	if errors.Is(err, ssms.ErrNotFound) {
-		return models.User{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
-	}
 	if err != nil {
-		return models.User{}, fmt.Errorf("%s: failed to get user: %w", op, err)
+		return models.User{}, errors2.WithMessage(HandleStorageError(err), op, "failed to get user by email from mssql")
 	}
 
 	return user, nil
@@ -52,20 +46,17 @@ func (s *Service) SaveUser(
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return 0, fmt.Errorf("%s: failed to hash password: %w", op, err)
+		return 0, errors2.WithMessage(err, op, "failed hash password")
 	}
 
 	id, err := s.userOwner.SaveUser(
 		ctx,
-		models.User{
+		&models.User{
 			Email:    email,
 			Password: passHash,
 		})
-	if errors.Is(err, ssms.ErrAlreadyExists) {
-		return 0, fmt.Errorf("%s: %w", op, ErrUserAlreadyExists)
-	}
 	if err != nil {
-		return 0, fmt.Errorf("%s: failed to save user: %w", op, err)
+		return 0, errors2.WithMessage(HandleStorageError(err), op, "failed to save user in mssql")
 	}
 
 	return id, nil
@@ -79,19 +70,16 @@ func (s *Service) Login(
 	const op = "services.pcClub.user.Email"
 
 	user, err := s.userProvider.UserByEmail(ctx, email)
-	if errors.Is(err, ssms.ErrNotFound) {
-		return 0, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+	if errors.Is(err, mssql.ErrNotFound) {
+		return 0, errors2.WithMessage(ErrInvalidCredentials, op, "failed to get user from mssql")
 	}
 	if err != nil {
-		return 0, fmt.Errorf("%s: failed to get user: %w", op, err)
+		return 0, errors2.WithMessage(HandleStorageError(err), op, "failed to get user from mssql")
 	}
 
 	err = bcrypt.CompareHashAndPassword(user.Password, []byte(password))
-	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		return 0, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
-	}
 	if err != nil {
-		return 0, fmt.Errorf("%s: failed to compare password: %w", op, err)
+		return 0, errors2.WithMessage(HandleStorageError(err), op, "failed to compare password")
 	}
 
 	return user.UserID, nil
@@ -104,11 +92,8 @@ func (s *Service) DeleteUser(
 	const op = "services.pcClub.user.DeleteUser"
 
 	err := s.userOwner.DeleteUser(ctx, uid)
-	if errors.Is(err, ssms.ErrNotFound) {
-		return fmt.Errorf("%s: %w", op, ErrUserNotFound)
-	}
 	if err != nil {
-		return fmt.Errorf("%s: failed to delete user: %w", op, err)
+		return errors2.WithMessage(HandleStorageError(err), op, "failed to delete user from mssql")
 	}
 
 	return nil
@@ -121,15 +106,12 @@ func (s *Service) IsAdmin(
 	const op = "services.pcClub.user.IsAdmin"
 
 	role, err := s.userProvider.UserRole(ctx, uid)
-	if errors.Is(err, ssms.ErrNotFound) {
-		return fmt.Errorf("%s: %w", op, ErrUserNotFound)
-	}
 	if err != nil {
-		return fmt.Errorf("%s: failed to get role: %w", op, err)
+		return errors2.WithMessage(HandleStorageError(err), op, "failed to get user role from mssql")
 	}
 
 	if role != s.cfg.AdminRoleName {
-		return fmt.Errorf("%s: %w", op, ErrAccessDenied)
+		return errors2.WithMessage(ErrAccessDenied, op, "user is not admin")
 	}
 
 	return nil

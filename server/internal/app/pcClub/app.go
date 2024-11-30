@@ -10,8 +10,10 @@ import (
 	"net/http"
 	"server/internal/config"
 	"server/internal/http-server/handlers/pcCLub"
+	"server/internal/http-server/middleware/auth/authAdmin"
+	"server/internal/http-server/middleware/auth/authorization"
 	"server/internal/http-server/middleware/logger"
-	"server/internal/lib/logger/sl"
+	"server/internal/lib/api/logger/sl"
 )
 
 type App struct {
@@ -21,9 +23,9 @@ type App struct {
 }
 
 func New(cfg *config.HTTPSServerConfig, api *pcCLub.API) *App {
-	router := chi.NewRouter()
+	r := chi.NewRouter()
 
-	router.Use(cors.Handler(cors.Options{
+	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
 		AllowedOrigins: []string{"https://*", "*"},
 		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
@@ -34,70 +36,87 @@ func New(cfg *config.HTTPSServerConfig, api *pcCLub.API) *App {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
-	router.Use(middleware.RequestID)
-	router.Use(logger.New(api.Log))
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.URLFormat)
+	r.Use(middleware.RequestID)
+	r.Use(logger.New(api.Log))
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.URLFormat)
 
-	router.Post("/register", api.Register())
-	router.Post("/login", api.Login())
-	router.Post("/user", api.User())
-	router.Post("/refresh", api.Refresh())
-	router.Post("/logout", api.Logout())
+	r.Post("/register", api.Register())
+	r.Post("/login", api.Login())
+	r.Post("/refresh", api.Refresh())
+	r.Post("/logout", api.Logout())
 
-	router.Get("/pc-types", api.PcTypes())
-	router.Get("/pcs", api.Pcs())
-	router.Get("/pc-type/{type-id}", api.PcType())
+	r.Get("/pc-types", api.PcTypes())
+	r.Get("/pcs", api.Pcs())
+	r.Get("/pc-type/{type-id}", api.PcType())
 
-	router.Post("/save-pc", api.SavePc())
-	router.Post("/save-pc-type", api.SavePcType())
-	router.Post("/update-pc-type", api.UpdatePcType())
-	router.Post("/update-pc", api.UpdatePc())
-	router.Post("/delete-pc-type", api.DeletePcType())
-	router.Post("/delete-pc", api.DeletePc())
+	r.Get("/pc-room/{room-id}", api.PcRoom())
 
-	router.Get("/pc-room/{room-id}", api.PcRoom())
-	router.Post("/save-pc-room", api.SavePcRoom())
-	router.Post("/update-pc-room", api.UpdatePcRoom())
-	router.Post("/delete-pc-room", api.DeletePcRoom())
+	r.Get("/monitor-producers", api.MonitorProducers())
+	r.Get("/monitors", api.Monitors())
 
-	router.Get("/monitor-producers", api.MonitorProducers())
-	router.Get("/monitors", api.Monitors())
-	router.Post("/save-monitor-producer", api.SaveMonitorProducer())
-	router.Post("/save-monitor", api.SaveMonitor())
-	router.Post("/delete-monitor-producer", api.DeleteMonitorProducer())
-	router.Post("/delete-monitor", api.DeleteMonitor())
+	r.Get("/processor-producers", api.ProcessorProducers())
+	r.Get("/processors", api.Processors())
 
-	router.Get("/processor-producers", api.ProcessorProducers())
-	router.Get("/processors", api.Processors())
-	router.Post("/save-processor-producer", api.SaveProcessorProducer())
-	router.Post("/save-processor", api.SaveProcessor())
-	router.Post("/delete-processor-producer", api.DeleteProcessorProducer())
-	router.Post("/delete-processor", api.DeleteProcessor())
+	r.Get("/video-card-producers", api.VideoCardProducers())
+	r.Get("/video-cards", api.VideoCards())
 
-	router.Get("/video-card-producers", api.VideoCardProducers())
-	router.Get("/video-cards", api.VideoCards())
-	router.Post("/save-video-card-producer", api.SaveVideoCardProducer())
-	router.Post("/save-video-card", api.SaveVideoCard())
-	router.Post("/delete-video-card-producer", api.DeleteVideoCardProducer())
-	router.Post("/delete-video-card", api.DeleteVideoCard())
+	r.Get("/ram-types", api.RamTypes())
+	r.Get("/ram", api.Rams())
 
-	router.Get("/ram-types", api.RamTypes())
-	router.Get("/ram", api.Rams())
-	router.Post("/save-ram-type", api.SaveRamType())
-	router.Post("/save-ram", api.SaveRam())
-	router.Post("/delete-ram-type", api.DeleteRamType())
-	router.Post("/delete-ram", api.DeleteRam())
+	r.Get("/dishes", api.Dishes())
+	r.Get("/dish/{dish-id}", api.Dish())
 
-	router.Get("/dishes", api.Dishes())
-	router.Get("/dish/{dish-id}", api.Dish())
-	router.Post("/save-dish", api.SaveDish())
-	router.Post("/update-dish", api.UpdateDish())
-	router.Post("/delete-dish", api.DeleteDish())
+	//routes to be authorized
+	r.Group(func(r chi.Router) {
+		r.Use(authorization.Authorize(api.Log, api.AuthService))
+
+		r.Post("/user", api.User())
+	})
+
+	//admin routes
+	r.Group(func(r chi.Router) {
+		r.Use(authAdmin.AuthAdmin(api.Log, api.AuthService, api.UserService))
+
+		r.Post("/save-pc", api.SavePc())
+		r.Post("/save-pc-type", api.SavePcType())
+		r.Post("/update-pc-type", api.UpdatePcType())
+		r.Post("/update-pc", api.UpdatePc())
+		r.Post("/delete-pc-type", api.DeletePcType())
+		r.Post("/delete-pc", api.DeletePc())
+
+		r.Post("/save-pc-room", api.SavePcRoom())
+		r.Post("/update-pc-room", api.UpdatePcRoom())
+		r.Post("/delete-pc-room", api.DeletePcRoom())
+
+		r.Post("/save-monitor-producer", api.SaveMonitorProducer())
+		r.Post("/save-monitor", api.SaveMonitor())
+		r.Post("/delete-monitor-producer", api.DeleteMonitorProducer())
+		r.Post("/delete-monitor", api.DeleteMonitor())
+
+		r.Post("/save-processor-producer", api.SaveProcessorProducer())
+		r.Post("/save-processor", api.SaveProcessor())
+		r.Post("/delete-processor-producer", api.DeleteProcessorProducer())
+		r.Post("/delete-processor", api.DeleteProcessor())
+
+		r.Post("/save-video-card-producer", api.SaveVideoCardProducer())
+		r.Post("/save-video-card", api.SaveVideoCard())
+		r.Post("/delete-video-card-producer", api.DeleteVideoCardProducer())
+		r.Post("/delete-video-card", api.DeleteVideoCard())
+
+		r.Post("/save-ram-type", api.SaveRamType())
+		r.Post("/save-ram", api.SaveRam())
+		r.Post("/delete-ram-type", api.DeleteRamType())
+		r.Post("/delete-ram", api.DeleteRam())
+
+		r.Post("/save-dish", api.SaveDish())
+		r.Post("/update-dish", api.UpdateDish())
+		r.Post("/delete-dish", api.DeleteDish())
+	})
 
 	srv := &http.Server{
 		Addr:         cfg.Address,
-		Handler:      router,
+		Handler:      r,
 		ReadTimeout:  cfg.Timeout,
 		WriteTimeout: cfg.Timeout,
 		IdleTimeout:  cfg.IdleTimeout,

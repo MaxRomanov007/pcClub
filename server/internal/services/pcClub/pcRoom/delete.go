@@ -2,23 +2,17 @@ package pcRoom
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"server/internal/storage/ssms"
+	errors2 "server/internal/lib/errors"
 )
 
 func (s *Service) DeletePcRoom(
 	ctx context.Context,
-	roomId int64,
+	roomID int64,
 ) error {
 	const op = "services.pcClub.pcRoom.DeletePcRoom"
 
-	if err := s.owner.DeletePcRoom(ctx, roomId); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", handleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: %w", op, err)
+	if err := s.owner.DeletePcRoom(ctx, roomID); err != nil {
+		return errors2.WithMessage(HandleStorageError(err), op, "failed to delete pc room from mssql")
 	}
 
 	return nil

@@ -12,29 +12,29 @@ type provider interface {
 
 	VideoCards(
 		ctx context.Context,
-		producerId int64,
-	) (videoCards []models.VideoCard, err error)
+		videoCardID int64,
+	) (cards []models.VideoCard, err error)
 }
 
 type owner interface {
 	SaveVideoCardProducer(
 		ctx context.Context,
-		name string,
-	) (err error)
+		producer *models.VideoCardProducer,
+	) (id int64, err error)
 
 	SaveVideoCard(
 		ctx context.Context,
-		videoCard models.VideoCard,
-	) (err error)
+		card *models.VideoCard,
+	) (id int64, err error)
 
 	DeleteVideoCardProducer(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (err error)
 
 	DeleteVideoCard(
 		ctx context.Context,
-		videoCardId int64,
+		cardID int64,
 	) (err error)
 }
 
@@ -53,6 +53,10 @@ type redisOwner interface {
 		value interface{},
 	) (err error)
 }
+
+const (
+	RedisVideoCardProducersKey = "video_card_producers"
+)
 
 type Service struct {
 	provider      provider

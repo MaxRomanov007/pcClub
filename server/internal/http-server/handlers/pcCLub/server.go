@@ -2,35 +2,25 @@ package pcCLub
 
 import (
 	"context"
-	"errors"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
-	"github.com/go-playground/validator"
 	"log/slog"
 	"net/http"
 	"server/internal/config"
-	"server/internal/lib/cookie"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/request/urlGet"
-	"server/internal/lib/response"
 	"server/internal/models"
-	"server/internal/services/pcClub/auth"
-	"server/internal/services/pcClub/user"
-	"strings"
 )
 
 type AuthService interface {
 	Access(
 		ctx context.Context,
-		AccessToken string,
+		accessToken string,
 	) (uid int64, err error)
 
 	Refresh(
 		ctx context.Context,
-		RefreshToken string,
-	) (
-		accessToken string,
 		refreshToken string,
+	) (
+		access string,
+		refresh string,
 		err error,
 	)
 
@@ -66,7 +56,7 @@ type UserService interface {
 	User(
 		ctx context.Context,
 		uid int64,
-	) (user models.UserData, err error)
+	) (user models.User, err error)
 
 	UserByEmail(
 		ctx context.Context,
@@ -87,39 +77,29 @@ type UserService interface {
 type PcTypeService interface {
 	PcTypes(
 		ctx context.Context,
-		limit int64,
-		offset int64,
-	) (pcs []models.PcTypeData, err error)
+		limit int,
+		offset int,
+	) (pcs []models.PcType, err error)
 
 	PcType(
 		ctx context.Context,
-		typeId int64,
-	) (pcType models.PcTypeData, err error)
+		typeID int64,
+	) (pcType models.PcType, err error)
 
 	SavePcType(
 		ctx context.Context,
-		name string,
-		description string,
-		processor *models.ProcessorData,
-		videoCard *models.VideoCardData,
-		monitor *models.MonitorData,
-		ram *models.RamData,
-	) (err error)
+		pc *models.PcType,
+	) (id int64, err error)
 
 	UpdatePcType(
 		ctx context.Context,
-		typeId int64,
-		name string,
-		description string,
-		processor *models.ProcessorData,
-		videoCard *models.VideoCardData,
-		monitor *models.MonitorData,
-		ram *models.RamData,
+		typeID int64,
+		pcType *models.PcType,
 	) (err error)
 
 	DeletePcType(
 		ctx context.Context,
-		typeId int64,
+		typeID int64,
 	) (err error)
 }
 
@@ -128,26 +108,17 @@ type PcService interface {
 		ctx context.Context,
 		typeId int64,
 		isAvailable bool,
-	) (pcs []models.PcData, err error)
+	) (pcs []models.Pc, err error)
 
 	SavePc(
 		ctx context.Context,
-		typeId int64,
-		roomId int64,
-		row int,
-		place int,
-		description string,
-	) (err error)
+		pc *models.Pc,
+	) (id int64, err error)
 
 	UpdatePc(
 		ctx context.Context,
-		pcId int64,
-		typeId int64,
-		roomId int64,
-		statusId int64,
-		row int,
-		place int,
-		description string,
+		pcID int64,
+		pc *models.Pc,
 	) (err error)
 
 	DeletePc(
@@ -159,17 +130,23 @@ type PcService interface {
 type PcRoomService interface {
 	PcRoom(
 		ctx context.Context,
-		pcId int64,
-	) (pcRoom models.PcRoom, err error)
+		roomID int64,
+	) (room models.PcRoom, err error)
+
+	PcRooms(
+		ctx context.Context,
+		pcTypeID int64,
+	) (rooms []models.PcRoom, err error)
 
 	SavePcRoom(
 		ctx context.Context,
-		pcRoom models.PcRoom,
-	) (err error)
+		room *models.PcRoom,
+	) (id int64, err error)
 
 	UpdatePcRoom(
 		ctx context.Context,
-		pcRoom models.PcRoom,
+		roomID int64,
+		room *models.PcRoom,
 	) (err error)
 
 	DeletePcRoom(
@@ -185,27 +162,27 @@ type ProcessorService interface {
 
 	Processors(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (processors []models.Processor, err error)
 
 	SaveProcessorProducer(
 		ctx context.Context,
-		name string,
-	) (err error)
+		producer *models.ProcessorProducer,
+	) (id int64, err error)
 
 	SaveProcessor(
 		ctx context.Context,
-		processor models.Processor,
-	) (err error)
+		processor *models.Processor,
+	) (id int64, err error)
 
 	DeleteProcessorProducer(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (err error)
 
 	DeleteProcessor(
 		ctx context.Context,
-		processorId int64,
+		processorID int64,
 	) (err error)
 }
 
@@ -216,27 +193,27 @@ type MonitorService interface {
 
 	Monitors(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (monitors []models.Monitor, err error)
 
 	SaveMonitorProducer(
 		ctx context.Context,
-		name string,
-	) (err error)
+		producer *models.MonitorProducer,
+	) (id int64, err error)
 
 	SaveMonitor(
 		ctx context.Context,
-		monitor models.Monitor,
-	) (err error)
+		monitor *models.Monitor,
+	) (id int64, err error)
 
 	DeleteMonitorProducer(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (err error)
 
 	DeleteMonitor(
 		ctx context.Context,
-		monitorId int64,
+		monitorID int64,
 	) (err error)
 }
 
@@ -247,58 +224,58 @@ type VideoCardService interface {
 
 	VideoCards(
 		ctx context.Context,
-		producerId int64,
-	) (videoCards []models.VideoCard, err error)
+		videoCardID int64,
+	) (cards []models.VideoCard, err error)
 
 	SaveVideoCardProducer(
 		ctx context.Context,
-		name string,
-	) (err error)
+		producer *models.VideoCardProducer,
+	) (id int64, err error)
 
 	SaveVideoCard(
 		ctx context.Context,
-		videoCard models.VideoCard,
-	) (err error)
+		card *models.VideoCard,
+	) (id int64, err error)
 
 	DeleteVideoCardProducer(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (err error)
 
 	DeleteVideoCard(
 		ctx context.Context,
-		videoCardId int64,
+		cardID int64,
 	) (err error)
 }
 
 type RamService interface {
 	RamTypes(
 		ctx context.Context,
-	) (producers []models.RamType, err error)
+	) (ramTypes []models.RAMType, err error)
 
 	Rams(
 		ctx context.Context,
-		typeId int64,
-	) (rams []models.Ram, err error)
+		typeID int64,
+	) (rams []models.RAM, err error)
 
 	SaveRamType(
 		ctx context.Context,
-		name string,
-	) (err error)
+		ramType *models.RAMType,
+	) (id int64, err error)
 
 	SaveRam(
 		ctx context.Context,
-		ram models.Ram,
-	) (err error)
+		ram *models.RAM,
+	) (id int64, err error)
 
 	DeleteRamType(
 		ctx context.Context,
-		typeId int64,
+		ramTypeID int64,
 	) (err error)
 
 	DeleteRam(
 		ctx context.Context,
-		ramId int64,
+		ramID int64,
 	) (err error)
 }
 
@@ -312,29 +289,37 @@ type ComponentsService struct {
 type DishService interface {
 	Dishes(
 		ctx context.Context,
-		limit int64,
-		offset int64,
-	) (dishes []models.DishData, err error)
+		limit int,
+		offset int,
+	) (dishes []models.Dish, err error)
 
 	Dish(
 		ctx context.Context,
 		dishId int64,
-	) (dish models.DishData, err error)
+	) (dish models.Dish, err error)
 
 	SaveDish(
 		ctx context.Context,
-		dish models.DishData,
-	) (err error)
+		dish *models.Dish,
+	) (id int64, err error)
 
 	UpdateDish(
 		ctx context.Context,
-		dish models.DishData,
+		dishID int64,
+		dish *models.Dish,
 	) (err error)
 
 	DeleteDish(
 		ctx context.Context,
 		dishId int64,
 	) (err error)
+}
+
+type OrderService interface {
+	PcOrders(
+		ctx context.Context,
+		uid int64,
+	)
 }
 
 type API struct {
@@ -347,6 +332,7 @@ type API struct {
 	PcRoomService     PcRoomService
 	ComponentsService ComponentsService
 	DishService       DishService
+	OrderService      OrderService
 }
 
 func New(
@@ -371,146 +357,6 @@ func New(
 		ComponentsService: componentsService,
 		DishService:       dishService,
 	}
-}
-
-func (a *API) decodeAndValidateJSONRequest(
-	w http.ResponseWriter,
-	r *http.Request,
-	log *slog.Logger,
-	req any,
-) bool {
-	if err := render.DecodeJSON(r.Body, &req); err != nil {
-		log.Error("failed to decode request body", sl.Err(err))
-		response.Internal(w)
-		return false
-	}
-
-	if !a.validateRequest(w, req, log) {
-		return false
-	}
-
-	return true
-}
-
-func (a *API) decodeAndValidateGETRequest(
-	w http.ResponseWriter,
-	r *http.Request,
-	log *slog.Logger,
-	req any,
-) bool {
-	if err := urlGet.Decode(r, req); err != nil {
-		log.Error("failed to decode get request", sl.Err(err))
-		response.Internal(w)
-		return false
-	}
-	if !a.validateRequest(w, req, log) {
-		return false
-	}
-	return true
-}
-
-func (a *API) validateRequest(w http.ResponseWriter, req any, log *slog.Logger) bool {
-	if err := validator.New().Struct(req); err != nil {
-		var validError validator.ValidationErrors
-		if ok := errors.As(err, &validError); ok {
-			log.Warn("invalid request", sl.Err(err))
-			response.ValidationFailed(w, validError)
-			return false
-		}
-
-		log.Error("failed to validate request", sl.Err(err))
-		response.Internal(w)
-		return false
-	}
-	return true
-}
-
-func (a *API) setRefreshCookie(w http.ResponseWriter, refreshToken string) {
-	cookie.Set(
-		w,
-		a.Cfg.Auth.Refresh.CookieName,
-		refreshToken,
-		a.Cfg.Auth.Path,
-		a.Cfg.Auth.Refresh.TTL,
-	)
-}
-
-func (a *API) getRefreshToken(w http.ResponseWriter, r *http.Request, log *slog.Logger) string {
-	refresh, err := r.Cookie(a.Cfg.Auth.Refresh.CookieName)
-	if errors.Is(err, http.ErrNoCookie) {
-		log.Warn("no refresh cookie in request", sl.Err(err))
-		response.Unauthorized(w, "no refresh cookie in request")
-		return ""
-	}
-	if err != nil {
-		log.Error("failed to get cookie", sl.Err(err))
-		response.Internal(w)
-		return ""
-	}
-
-	return refresh.Value
-}
-
-func (a *API) getAccessToken(w http.ResponseWriter, r *http.Request, log *slog.Logger) string {
-	access := r.Header.Get("Authorization")
-	if access == "" {
-		log.Warn("no authorization header in request")
-		response.Unauthorized(w, "no authorization header in request")
-		return ""
-	}
-
-	access, isBearer := strings.CutPrefix(access, "Bearer ")
-	if !isBearer {
-		log.Warn("auth header is not bearer token")
-		response.Unauthorized(w, "auth header is not bearer token")
-		return ""
-	}
-
-	return access
-}
-
-func (a *API) authorizeRequest(w http.ResponseWriter, r *http.Request, log *slog.Logger) int64 {
-	access := a.getAccessToken(w, r, log)
-	if access == "" {
-		return 0
-	}
-
-	uid, err := a.AuthService.Access(r.Context(), access)
-	if err != nil {
-		var authError *auth.Error
-		if ok := errors.As(err, &authError); ok {
-			log.Warn("auth failed", sl.Err(err))
-			response.AuthorizationFailed(w, authError)
-			return 0
-		}
-
-		log.Error("failed to access token", sl.Err(err))
-		response.Internal(w)
-		return 0
-	}
-
-	return uid
-}
-
-func (a *API) authorizeAdmin(w http.ResponseWriter, r *http.Request, log *slog.Logger) bool {
-	uid := a.authorizeRequest(w, r, log)
-	if uid == 0 {
-		return false
-	}
-
-	if err := a.UserService.IsAdmin(r.Context(), uid); err != nil {
-		if errors.Is(err, user.ErrAccessDenied) {
-			log.Warn("access denied", sl.Err(err))
-			response.Unauthorized(w, "access denied")
-			return false
-		}
-
-		log.Error("failed to check if user is admin", sl.Err(err))
-		response.Internal(w)
-		return false
-	}
-
-	return true
 }
 
 func (a *API) log(op string, r *http.Request) *slog.Logger {

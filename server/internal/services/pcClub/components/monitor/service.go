@@ -12,29 +12,29 @@ type provider interface {
 
 	Monitors(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (monitors []models.Monitor, err error)
 }
 
 type owner interface {
 	SaveMonitorProducer(
 		ctx context.Context,
-		name string,
-	) (err error)
+		producer *models.MonitorProducer,
+	) (id int64, err error)
 
 	SaveMonitor(
 		ctx context.Context,
-		monitor models.Monitor,
-	) (err error)
+		monitor *models.Monitor,
+	) (id int64, err error)
 
 	DeleteMonitorProducer(
 		ctx context.Context,
-		producerId int64,
+		producerID int64,
 	) (err error)
 
 	DeleteMonitor(
 		ctx context.Context,
-		monitorId int64,
+		monitorID int64,
 	) (err error)
 }
 
@@ -60,6 +60,10 @@ type Service struct {
 	redisProvider redisProvider
 	redisOwner    redisOwner
 }
+
+const (
+	RedisMonitorProducersKey = "monitor_producers"
+)
 
 func New(provider provider, owner owner, redisProvider redisProvider, redisOwner redisOwner) *Service {
 	return &Service{

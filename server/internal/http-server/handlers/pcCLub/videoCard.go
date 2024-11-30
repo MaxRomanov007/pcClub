@@ -4,8 +4,9 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
 	"server/internal/models"
 	"server/internal/services/pcClub/components"
 )
@@ -60,8 +61,8 @@ func (a *API) VideoCards() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req VideoCardsRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[VideoCardsRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -88,16 +89,15 @@ func (a *API) SaveVideoCardProducer() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveVideoCardProducerRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveVideoCardProducerRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		producer := models.VideoCardProducer{
+			Name: req.Name,
 		}
-
-		if err := a.ComponentsService.VideoCard.SaveVideoCardProducer(r.Context(), req.Name); err != nil {
+		if _, err := a.ComponentsService.VideoCard.SaveVideoCardProducer(r.Context(), &producer); err != nil {
 			var serviceErr *components.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("component error", sl.Err(err))
@@ -108,6 +108,8 @@ func (a *API) SaveVideoCardProducer() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, producer)
 	}
 }
 
@@ -117,19 +119,16 @@ func (a *API) SaveVideoCard() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveVideoCardRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveVideoCardRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
-		}
-
-		if err := a.ComponentsService.VideoCard.SaveVideoCard(r.Context(), models.VideoCard{
+		card := models.VideoCard{
 			VideoCardProducerID: req.ProducerId,
 			Model:               req.Model,
-		}); err != nil {
+		}
+		if _, err := a.ComponentsService.VideoCard.SaveVideoCard(r.Context(), &card); err != nil {
 			var serviceErr *components.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("component error", sl.Err(err))
@@ -140,6 +139,8 @@ func (a *API) SaveVideoCard() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, card)
 	}
 }
 
@@ -149,12 +150,8 @@ func (a *API) DeleteVideoCardProducer() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeleteVideoCardProducerRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteVideoCardProducerRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -178,12 +175,8 @@ func (a *API) DeleteVideoCard() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeleteVideoCardRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteVideoCardRequest](w, r, log)
+		if !ok {
 			return
 		}
 

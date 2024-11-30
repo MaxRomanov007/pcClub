@@ -2,24 +2,17 @@ package videoCard
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"server/internal/services/pcClub/components"
-	"server/internal/storage/ssms"
+	"server/internal/lib/errors"
 )
 
 func (s *Service) DeleteVideoCardProducer(
 	ctx context.Context,
-	producerId int64,
+	producerID int64,
 ) error {
 	const op = "services.pcClub.components.videoCard.DeleteVideoCardProducer"
 
-	if err := s.owner.DeleteVideoCardProducer(ctx, producerId); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to delete video card producer: %w", op, err)
+	if err := s.owner.DeleteVideoCardProducer(ctx, producerID); err != nil {
+		return errors.WithMessage(err, op, "failed to delete video card producer from mssql")
 	}
 
 	return nil
@@ -27,16 +20,12 @@ func (s *Service) DeleteVideoCardProducer(
 
 func (s *Service) DeleteVideoCard(
 	ctx context.Context,
-	videoCardId int64,
+	videoCardID int64,
 ) error {
 	const op = "services.pcClub.components.videoCard.DeleteVideoCard"
 
-	if err := s.owner.DeleteVideoCard(ctx, videoCardId); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to delete video card: %w", op, err)
+	if err := s.owner.DeleteVideoCard(ctx, videoCardID); err != nil {
+		return errors.WithMessage(err, op, "failed to delete video card from mssql")
 	}
 
 	return nil

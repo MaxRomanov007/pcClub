@@ -3,47 +3,42 @@ package ram
 import (
 	"context"
 	"errors"
-	"fmt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
 	"server/internal/services/pcClub/components"
 	"server/internal/storage/redis"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) RamTypes(
 	ctx context.Context,
-) ([]models.RamType, error) {
+) ([]models.RAMType, error) {
 	const op = "services.pcClub.components.ram.RamTypes"
 
-	var types []models.RamType
+	var types []models.RAMType
 	err := s.redisProvider.Value(
 		ctx,
-		"ram_types",
+		RedisRamTypesKey,
 		&types,
 	)
 	if err == nil {
 		return types, nil
 	}
 	if !errors.Is(err, redis.ErrNotFound) {
-		return nil, fmt.Errorf("%s: failed to get ram types from redis: %w", op, err)
+		return nil, errors2.WithMessage(err, op, "failed to get ram types from redis")
 	}
 
 	types, err = s.provider.RamTypes(ctx)
 	if err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return nil, fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return nil, fmt.Errorf("%s: failed to get ram types: %w", op, err)
+		return nil, errors2.WithMessage(components.HandleStorageError(err), op, "failed to get ram types from mssql")
 	}
 
 	err = s.redisOwner.Set(
 		ctx,
-		"ram_types",
+		RedisRamTypesKey,
 		types,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: failed to insert ram types into redis: %w", op, err)
+		return nil, errors2.WithMessage(err, op, "failed to insert ram types into redis")
 	}
 
 	return types, nil
@@ -51,39 +46,16 @@ func (s *Service) RamTypes(
 
 func (s *Service) Rams(
 	ctx context.Context,
-	typeId int64,
-) ([]models.Ram, error) {
-	const op = "services.pcClub.components.ram.Rams"
+	typeID int64,
+) ([]models.RAM, error) {
+	const op = "services.pcClub.components.ram.RamTypes"
 
-	var rams []models.Ram
-	err := s.redisProvider.Value(
-		ctx,
-		fmt.Sprintf("rams:%d", typeId),
-		&rams,
-	)
-	if err == nil {
-		return rams, nil
-	}
-	if !errors.Is(err, redis.ErrNotFound) {
-		return nil, fmt.Errorf("%s: failed to get rams from redis: %w", op, err)
-	}
-
-	rams, err = s.provider.Rams(ctx, typeId)
+	rams, err := s.provider.Rams(ctx, typeID)
 	if err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return nil, fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return nil, fmt.Errorf("%s: failed to get rams: %w", op, err)
-	}
-
-	err = s.redisOwner.Set(
-		ctx,
-		fmt.Sprintf("rams:%d", typeId),
-		rams,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("%s: failed to insert rams into redis: %w", op, err)
+		return nil, errors2.WithMessage(
+			components.HandleStorageError(err),
+			op, "failed to get rams from mssql",
+		)
 	}
 
 	return rams, nil

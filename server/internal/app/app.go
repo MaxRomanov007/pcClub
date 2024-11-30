@@ -17,8 +17,8 @@ import (
 	"server/internal/services/pcClub/pcRoom"
 	"server/internal/services/pcClub/pcType"
 	"server/internal/services/pcClub/user"
+	gorm "server/internal/storage/mssql"
 	"server/internal/storage/redis"
-	"server/internal/storage/ssms"
 )
 
 type App struct {
@@ -45,9 +45,9 @@ func New(
 ) (*App, error) {
 	const op = "app.New"
 
-	sqlserverStorage, err := ssms.New(cfg.Database.SQLServer)
+	mssqlStorage, err := gorm.New(cfg.Database.SQLServer)
 	if err != nil {
-		return nil, fmt.Errorf("%s: failed to create sqlserver storage: %w", op, err)
+		return nil, fmt.Errorf("%s: failed to create mssql storage: %w", op, err)
 	}
 
 	redisStorage, err := redis.New(ctx, cfg.Database.Redis)
@@ -55,16 +55,16 @@ func New(
 		return nil, fmt.Errorf("%s: failed to create redis storage: %w", op, err)
 	}
 
-	authService := auth.New(cfg.Auth, redisStorage, redisStorage, sqlserverStorage, sqlserverStorage)
-	userService := user.New(cfg.User, sqlserverStorage, sqlserverStorage)
-	pcTypeService := pcType.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
-	pcService := pc.New(sqlserverStorage, sqlserverStorage)
-	pcRoomService := pcRoom.New(redisStorage, redisStorage, sqlserverStorage, sqlserverStorage)
-	processorService := processor.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
-	monitorService := monitor.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
-	videoCardService := videoCard.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
-	ramService := ram.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
-	dishService := dish.New(sqlserverStorage, sqlserverStorage, redisStorage, redisStorage)
+	authService := auth.New(cfg.Auth, redisStorage, redisStorage, mssqlStorage, mssqlStorage)
+	userService := user.New(cfg.User, mssqlStorage, mssqlStorage)
+	pcTypeService := pcType.New(mssqlStorage, mssqlStorage, redisStorage, redisStorage)
+	pcService := pc.New(mssqlStorage, mssqlStorage)
+	pcRoomService := pcRoom.New(redisStorage, redisStorage, mssqlStorage, mssqlStorage)
+	processorService := processor.New(mssqlStorage, mssqlStorage, redisStorage, redisStorage)
+	monitorService := monitor.New(mssqlStorage, mssqlStorage, redisStorage, redisStorage)
+	videoCardService := videoCard.New(mssqlStorage, mssqlStorage, redisStorage, redisStorage)
+	ramService := ram.New(mssqlStorage, mssqlStorage, redisStorage, redisStorage)
+	dishService := dish.New(mssqlStorage, mssqlStorage, redisStorage, redisStorage)
 
 	pcClubApi := pcClubServer.New(
 		log,

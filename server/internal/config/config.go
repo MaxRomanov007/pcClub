@@ -53,21 +53,18 @@ type ImagesConfig struct {
 }
 
 type AccessTokenConfig struct {
-	Secret             string        `yaml:"secret"`
-	TTL                time.Duration `yaml:"ttl"`
-	IsBlackList        bool          `yaml:"is_black_list"`
-	RedisBlackListName string        `yaml:"redis_black_list_name"`
+	Secret string        `yaml:"secret"`
+	TTL    time.Duration `yaml:"ttl"`
 }
 
 type RefreshTokenConfig struct {
-	Secret             string        `yaml:"secret"`
-	TTL                time.Duration `yaml:"ttl"`
-	RedisBlackListName string        `yaml:"redis_black_list_name"`
-	CookieName         string        `yaml:"cookie_name"`
+	Secret     string        `yaml:"secret"`
+	TTL        time.Duration `yaml:"ttl"`
+	CookieName string        `yaml:"cookie_name"`
 }
 
 type AuthConfig struct {
-	Path    string              `yaml:"path"`
+	UrlPath string              `yaml:"url_path"`
 	Access  *AccessTokenConfig  `yaml:"access"`
 	Refresh *RefreshTokenConfig `yaml:"refresh"`
 }

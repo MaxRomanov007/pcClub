@@ -2,39 +2,19 @@ package pcType
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) UpdatePcType(
 	ctx context.Context,
-	typeId int64,
-	name string,
-	description string,
-	processor *models.ProcessorData,
-	videoCard *models.VideoCardData,
-	monitor *models.MonitorData,
-	ram *models.RamData,
+	typeID int64,
+	pcType *models.PcType,
 ) error {
 	const op = "services.pcClub.pc.UpdatePcType"
 
-	if err := s.owner.UpdatePcType(
-		ctx,
-		typeId,
-		name,
-		description,
-		processor,
-		videoCard,
-		monitor,
-		ram,
-	); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, handleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to update pc type: %w", op, err)
+	if err := s.owner.UpdatePcType(ctx, typeID, pcType); err != nil {
+		return errors2.WithMessage(HandleStorageError(err), op, "failed to update pc type in mssql")
 	}
 
 	return nil

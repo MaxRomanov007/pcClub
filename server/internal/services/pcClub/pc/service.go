@@ -8,35 +8,26 @@ import (
 type provider interface {
 	Pcs(
 		ctx context.Context,
-		typeId int64,
+		typeID int64,
 		isAvailable bool,
-	) (pcs []models.PcData, err error)
+	) (pcs []models.Pc, err error)
 }
 
 type owner interface {
 	SavePc(
 		ctx context.Context,
-		typeId int64,
-		roomId int64,
-		row int,
-		place int,
-		description string,
+		pc *models.Pc,
+	) (id int64, err error)
+
+	UpdatePc(
+		ctx context.Context,
+		pcID int64,
+		pc *models.Pc,
 	) (err error)
 
 	DeletePc(
 		ctx context.Context,
-		pcId int64,
-	) (err error)
-
-	UpdatePc(
-		ctx context.Context,
-		pcId int64,
-		typeId int64,
-		roomId int64,
-		statusId int64,
-		row int,
-		place int,
-		description string,
+		pcID int64,
 	) (err error)
 }
 

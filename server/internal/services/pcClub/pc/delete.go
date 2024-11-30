@@ -2,23 +2,17 @@ package pc
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"server/internal/storage/ssms"
+	errors2 "server/internal/lib/errors"
 )
 
 func (s *Service) DeletePc(
 	ctx context.Context,
-	pcId int64,
+	pcID int64,
 ) error {
 	const op = "services.pcClub.pc.DeletePc"
 
-	if err := s.owner.DeletePc(ctx, pcId); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, handleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: %w", op, err)
+	if err := s.owner.DeletePc(ctx, pcID); err != nil {
+		return errors2.WithMessage(HandleStorageError(err), op, "failed to delete pc from mssql")
 	}
 
 	return nil

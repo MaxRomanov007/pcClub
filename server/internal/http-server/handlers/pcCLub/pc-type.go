@@ -4,15 +4,16 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
 	"server/internal/models"
 	"server/internal/services/pcClub/pc"
 )
 
 type PcTypesRequest struct {
-	Limit  int64 `validate:"omitempty,number,min=0" get:"limit"`
-	Offset int64 `validate:"omitempty,number,min=0" get:"offset"`
+	Limit  int `validate:"omitempty,number,min=0" get:"limit"`
+	Offset int `validate:"omitempty,number,min=0" get:"offset"`
 }
 
 type PcTypeRequest struct {
@@ -20,22 +21,24 @@ type PcTypeRequest struct {
 }
 
 type SavePcTypeRequest struct {
-	Name        string                `json:"name" validate:"required"`
-	Description string                `json:"description" validate:"omitempty,max=255"`
-	Processor   *models.ProcessorData `json:"processor" validate:"required,dive"`
-	VideoCard   *models.VideoCardData `json:"video_card" validate:"required,dive"`
-	Monitor     *models.MonitorData   `json:"monitor" validate:"required,dive"`
-	Ram         *models.RamData       `json:"ram" validate:"required,dive"`
+	Name        string  `json:"name" validate:"required"`
+	Description string  `json:"description" validate:"omitempty,max=255"`
+	HourCost    float32 `json:"hour_cost" validate:"required,min=1"`
+	ProcessorID int64   `json:"processor_id" validate:"required,min=1"`
+	VideoCardID int64   `json:"video_card_id" validate:"required,min=1"`
+	MonitorID   int64   `json:"monitor_id" validate:"required,min=1"`
+	RamID       int64   `json:"ram_id" validate:"required,min=1"`
 }
 
 type UpdatePcTypeRequest struct {
-	TypeId      int64                 `json:"id" validate:"required,numeric"`
-	Name        string                `json:"name" validate:"required"`
-	Description string                `json:"description" validate:"omitempty,max=255"`
-	Processor   *models.ProcessorData `json:"processor" validate:"required,dive"`
-	VideoCard   *models.VideoCardData `json:"video_card" validate:"required,dive"`
-	Monitor     *models.MonitorData   `json:"monitor" validate:"required,dive"`
-	Ram         *models.RamData       `json:"ram" validate:"required,dive"`
+	TypeID      int64   `json:"id" validate:"required,numeric"`
+	Name        string  `json:"name" validate:"required"`
+	Description string  `json:"description" validate:"omitempty,max=255"`
+	HourCost    float32 `json:"hour_cost" validate:"required,min=1"`
+	ProcessorID int64   `json:"processor_id" validate:"required,min=1"`
+	VideoCardID int64   `json:"video_card_id" validate:"required,min=1"`
+	MonitorID   int64   `json:"monitor_id" validate:"required,min=1"`
+	RamID       int64   `json:"ram_id" validate:"required,min=1"`
 }
 
 type DeletePcTypeRequest struct {
@@ -48,8 +51,8 @@ func (a *API) PcTypes() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req PcTypesRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[PcTypesRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -76,8 +79,8 @@ func (a *API) PcType() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req PcTypeRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[PcTypeRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -104,24 +107,21 @@ func (a *API) SavePcType() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SavePcTypeRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SavePcTypeRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		pcType := models.PcType{
+			Name:        req.Name,
+			Description: req.Description,
+			HourCost:    req.HourCost,
+			ProcessorID: req.ProcessorID,
+			VideoCardID: req.VideoCardID,
+			MonitorID:   req.MonitorID,
+			RAMID:       req.RamID,
 		}
-
-		if err := a.PcTypeService.SavePcType(
-			r.Context(),
-			req.Name,
-			req.Description,
-			req.Processor,
-			req.VideoCard,
-			req.Monitor,
-			req.Ram,
-		); err != nil {
+		if _, err := a.PcTypeService.SavePcType(r.Context(), &pcType); err != nil {
 			var pcErr *pc.Error
 			if ok := errors.As(err, &pcErr); ok {
 				log.Warn("pc error", sl.Err(err))
@@ -132,6 +132,8 @@ func (a *API) SavePcType() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, pcType)
 	}
 }
 
@@ -141,25 +143,21 @@ func (a *API) UpdatePcType() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[UpdatePcTypeRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req UpdatePcTypeRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		pcType := models.PcType{
+			Name:        req.Name,
+			Description: req.Description,
+			HourCost:    req.HourCost,
+			ProcessorID: req.ProcessorID,
+			VideoCardID: req.VideoCardID,
+			MonitorID:   req.MonitorID,
+			RAMID:       req.RamID,
 		}
-
-		if err := a.PcTypeService.UpdatePcType(
-			r.Context(),
-			req.TypeId,
-			req.Name,
-			req.Description,
-			req.Processor,
-			req.VideoCard,
-			req.Monitor,
-			req.Ram,
-		); err != nil {
+		if err := a.PcTypeService.UpdatePcType(r.Context(), req.TypeID, &pcType); err != nil {
 			var pcErr *pc.Error
 			if ok := errors.As(err, &pcErr); ok {
 				log.Warn("pc error", sl.Err(err))
@@ -170,6 +168,8 @@ func (a *API) UpdatePcType() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, pcType)
 	}
 }
 
@@ -179,12 +179,8 @@ func (a *API) DeletePcType() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeletePcTypeRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeletePcTypeRequest](w, r, log)
+		if !ok {
 			return
 		}
 

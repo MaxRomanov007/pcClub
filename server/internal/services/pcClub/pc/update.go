@@ -2,38 +2,19 @@ package pc
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"server/internal/storage/ssms"
+	errors2 "server/internal/lib/errors"
+	"server/internal/models"
 )
 
 func (s *Service) UpdatePc(
 	ctx context.Context,
-	pcId int64,
-	typeId int64,
-	roomId int64,
-	statusId int64,
-	row int,
-	place int,
-	description string,
+	pcID int64,
+	pc *models.Pc,
 ) error {
 	const op = "services.pcClub.pc.UpdatePc"
 
-	if err := s.owner.UpdatePc(
-		ctx,
-		pcId,
-		typeId,
-		roomId,
-		statusId,
-		row,
-		place,
-		description,
-	); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, handleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to update pc: %w", op, err)
+	if err := s.owner.UpdatePc(ctx, pcID, pc); err != nil {
+		return errors2.WithMessage(HandleStorageError(err), op, "failed to update pc in mssql")
 	}
 
 	return nil

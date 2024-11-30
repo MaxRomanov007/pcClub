@@ -4,8 +4,9 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
 	"server/internal/models"
 	"server/internal/services/pcClub/components"
 )
@@ -60,8 +61,8 @@ func (a *API) Processors() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req ProcessorsRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[ProcessorsRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -88,16 +89,15 @@ func (a *API) SaveProcessorProducer() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveProcessorProducerRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveProcessorProducerRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		producer := models.ProcessorProducer{
+			Name: req.Name,
 		}
-
-		if err := a.ComponentsService.Processor.SaveProcessorProducer(r.Context(), req.Name); err != nil {
+		if _, err := a.ComponentsService.Processor.SaveProcessorProducer(r.Context(), &producer); err != nil {
 			var serviceErr *components.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("component error", sl.Err(err))
@@ -108,6 +108,8 @@ func (a *API) SaveProcessorProducer() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, producer)
 	}
 }
 
@@ -117,19 +119,16 @@ func (a *API) SaveProcessor() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveProcessorRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveProcessorRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
-		}
-
-		if err := a.ComponentsService.Processor.SaveProcessor(r.Context(), models.Processor{
+		processor := models.Processor{
 			ProcessorProducerID: req.ProducerId,
 			Model:               req.Model,
-		}); err != nil {
+		}
+		if _, err := a.ComponentsService.Processor.SaveProcessor(r.Context(), &processor); err != nil {
 			var serviceErr *components.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("component error", sl.Err(err))
@@ -140,6 +139,8 @@ func (a *API) SaveProcessor() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, processor)
 	}
 }
 
@@ -149,12 +150,8 @@ func (a *API) DeleteProcessorProducer() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeleteProcessorProducerRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteProcessorProducerRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -178,12 +175,8 @@ func (a *API) DeleteProcessor() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeleteProcessorRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteProcessorRequest](w, r, log)
+		if !ok {
 			return
 		}
 

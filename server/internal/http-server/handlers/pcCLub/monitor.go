@@ -4,8 +4,9 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
 	"server/internal/models"
 	"server/internal/services/pcClub/components"
 )
@@ -60,8 +61,8 @@ func (a *API) Monitors() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req MonitorsRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[MonitorsRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -88,16 +89,15 @@ func (a *API) SaveMonitorProducer() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveMonitorProducerRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveMonitorProducerRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		producer := models.MonitorProducer{
+			Name: req.Name,
 		}
-
-		if err := a.ComponentsService.Monitor.SaveMonitorProducer(r.Context(), req.Name); err != nil {
+		if _, err := a.ComponentsService.Monitor.SaveMonitorProducer(r.Context(), &producer); err != nil {
 			var serviceErr *components.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("component error", sl.Err(err))
@@ -108,6 +108,8 @@ func (a *API) SaveMonitorProducer() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, producer)
 	}
 }
 
@@ -117,19 +119,16 @@ func (a *API) SaveMonitor() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveMonitorRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveMonitorRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
-		}
-
-		if err := a.ComponentsService.Monitor.SaveMonitor(r.Context(), models.Monitor{
+		monitor := models.Monitor{
 			MonitorProducerID: req.ProducerId,
 			Model:             req.Model,
-		}); err != nil {
+		}
+		if _, err := a.ComponentsService.Monitor.SaveMonitor(r.Context(), &monitor); err != nil {
 			var serviceErr *components.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("component error", sl.Err(err))
@@ -140,6 +139,8 @@ func (a *API) SaveMonitor() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, monitor)
 	}
 }
 
@@ -149,12 +150,8 @@ func (a *API) DeleteMonitorProducer() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeleteMonitorProducerRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteMonitorProducerRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -178,12 +175,8 @@ func (a *API) DeleteMonitor() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeleteMonitorRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteMonitorRequest](w, r, log)
+		if !ok {
 			return
 		}
 

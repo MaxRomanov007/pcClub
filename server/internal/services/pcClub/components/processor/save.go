@@ -2,43 +2,35 @@ package processor
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"server/internal/lib/errors"
 	"server/internal/models"
 	"server/internal/services/pcClub/components"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) SaveProcessorProducer(
 	ctx context.Context,
-	name string,
-) error {
+	producer *models.ProcessorProducer,
+) (int64, error) {
 	const op = "services.pcClub.components.processor.SaveProcessorProducer"
 
-	if err := s.owner.SaveProcessorProducer(ctx, name); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to save processor producer: %w", op, err)
+	id, err := s.owner.SaveProcessorProducer(ctx, producer)
+	if err != nil {
+		return 0, errors.WithMessage(components.HandleStorageError(err), op, "failed to save processor producer in mssql")
 	}
 
-	return nil
+	return id, nil
 }
 
 func (s *Service) SaveProcessor(
 	ctx context.Context,
-	processor models.Processor,
-) error {
+	processor *models.Processor,
+) (int64, error) {
 	const op = "services.pcClub.components.processor.SaveProcessor"
 
-	if err := s.owner.SaveProcessor(ctx, processor); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to save processor: %w", op, err)
+	id, err := s.owner.SaveProcessor(ctx, processor)
+	if err != nil {
+		return 0, errors.WithMessage(components.HandleStorageError(err), op, "failed to save processor in mssql")
 	}
 
-	return nil
+	return id, nil
 }

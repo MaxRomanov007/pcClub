@@ -2,24 +2,17 @@ package ram
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"server/internal/services/pcClub/components"
-	"server/internal/storage/ssms"
+	"server/internal/lib/errors"
 )
 
 func (s *Service) DeleteRamType(
 	ctx context.Context,
-	typeId int64,
+	typeID int64,
 ) error {
-	const op = "services.pcClub.components.ram.DeleteRamType"
+	const op = "services.pcClub.components.monitor.DeleteRamType"
 
-	if err := s.owner.DeleteRamType(ctx, typeId); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to delete ram type: %w", op, err)
+	if err := s.owner.DeleteRamType(ctx, typeID); err != nil {
+		return errors.WithMessage(err, op, "failed to delete monitor type from mssql")
 	}
 
 	return nil
@@ -27,16 +20,12 @@ func (s *Service) DeleteRamType(
 
 func (s *Service) DeleteRam(
 	ctx context.Context,
-	ramId int64,
+	monitorID int64,
 ) error {
-	const op = "services.pcClub.components.ram.DeleteRam"
+	const op = "services.pcClub.components.monitor.DeleteRam"
 
-	if err := s.owner.DeleteRam(ctx, ramId); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, components.HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to delete ram: %w", op, err)
+	if err := s.owner.DeleteRam(ctx, monitorID); err != nil {
+		return errors.WithMessage(err, op, "failed to delete monitor from mssql")
 	}
 
 	return nil

@@ -1,6 +1,10 @@
 package dish
 
-import "server/internal/storage/ssms"
+import (
+	"errors"
+	errors2 "server/internal/lib/errors"
+	gorm "server/internal/storage/mssql"
+)
 
 type Error struct {
 	Code    string
@@ -32,15 +36,21 @@ var (
 	}
 )
 
-func HandleStorageError(ssmsErr *ssms.Error) error {
-	switch ssmsErr.Code {
-	case ssms.ErrNotFoundCode:
-		return ErrNotFound
-	case ssms.ErrAlreadyExistsCode:
-		return ErrAlreadyExists
-	case ssms.ErrReferenceNotExistsCode:
-		return ErrReferenceNotExists
-	default:
-		return ssmsErr
+func HandleStorageError(err error) error {
+	var ssmsErr *gorm.Error
+	if !errors.As(err, &ssmsErr) {
+		return errors2.WithMessage(err, "unknown error")
 	}
+	switch ssmsErr.Code {
+	case gorm.ErrNotFoundCode:
+		err = ErrNotFound
+	case gorm.ErrAlreadyExistsCode:
+		err = ErrAlreadyExists
+	case gorm.ErrReferenceNotExistsCode:
+		err = ErrReferenceNotExists
+	default:
+		err = errors2.WithMessage(ssmsErr, "unknown mssql error")
+	}
+
+	return err
 }

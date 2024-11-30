@@ -4,19 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
 	"server/internal/storage/redis"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) Dishes(
 	ctx context.Context,
-	limit int64,
-	offset int64,
-) ([]models.DishData, error) {
+	limit int,
+	offset int,
+) ([]models.Dish, error) {
 	const op = "services.pcClub.dish.get.Dishes"
 
-	var dishes []models.DishData
+	var dishes []models.Dish
 	err := s.redisProvider.Value(
 		ctx,
 		fmt.Sprintf("dishes:%d-%d", limit, offset),
@@ -26,24 +26,20 @@ func (s *Service) Dishes(
 		return dishes, nil
 	}
 	if !errors.Is(err, redis.ErrNotFound) {
-		return nil, fmt.Errorf("%s: failed to get dishes from redis: %w", op, err)
+		return nil, errors2.WithMessage(err, op, "failed to get dishes from redis")
 	}
 
 	dishes, err = s.provider.Dishes(ctx, limit, offset)
 	if err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return nil, fmt.Errorf("%s: %w", op, HandleStorageError(ssmsErr))
-		}
-		return nil, fmt.Errorf("%s: failed to get dishes from ssms: %w", op, err)
+		return nil, errors2.WithMessage(HandleStorageError(err), op, "failed to get dishes from mssql")
 	}
 
-	if err := s.redisOwner.Set(
+	if err = s.redisOwner.Set(
 		ctx,
 		fmt.Sprintf("dishes:%d-%d", limit, offset),
 		dishes,
 	); err != nil {
-		return nil, fmt.Errorf("%s: failed to write dishes in redis: %w", op, err)
+		return nil, errors2.WithMessage(err, op, "failed to write dishes in redis")
 	}
 
 	return dishes, nil
@@ -51,38 +47,34 @@ func (s *Service) Dishes(
 
 func (s *Service) Dish(
 	ctx context.Context,
-	dishId int64,
-) (models.DishData, error) {
+	dishID int64,
+) (models.Dish, error) {
 	const op = "services.pcClub.dish.get.Dish"
 
-	var dish models.DishData
+	var dish models.Dish
 	err := s.redisProvider.Value(
 		ctx,
-		fmt.Sprintf("dish:%d", dishId),
+		fmt.Sprintf("dish:%d", dishID),
 		&dish,
 	)
 	if err == nil {
 		return dish, nil
 	}
 	if !errors.Is(err, redis.ErrNotFound) {
-		return models.DishData{}, fmt.Errorf("%s: failed to get dish from redis: %w", op, err)
+		return models.Dish{}, errors2.WithMessage(err, op, "failed to get dish from redis")
 	}
 
-	dish, err = s.provider.Dish(ctx, dishId)
+	dish, err = s.provider.Dish(ctx, dishID)
 	if err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return models.DishData{}, fmt.Errorf("%s: %w", op, HandleStorageError(ssmsErr))
-		}
-		return models.DishData{}, fmt.Errorf("%s: failed to get dish from ssms: %w", op, err)
+		return models.Dish{}, errors2.WithMessage(HandleStorageError(err), op, "failed to get dishes from mssql")
 	}
 
-	if err := s.redisOwner.Set(
+	if err = s.redisOwner.Set(
 		ctx,
-		fmt.Sprintf("dish:%d", dishId),
+		fmt.Sprintf("dish:%d", dishID),
 		dish,
 	); err != nil {
-		return models.DishData{}, fmt.Errorf("%s: failed to write dish in redis: %w", op, err)
+		return models.Dish{}, errors2.WithMessage(err, op, "failed to write dish in redis")
 	}
 
 	return dish, nil

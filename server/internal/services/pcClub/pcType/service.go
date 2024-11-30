@@ -24,41 +24,31 @@ type redisOwner interface {
 type provider interface {
 	PcType(
 		ctx context.Context,
-		id int64,
-	) (pcType models.PcTypeData, err error)
+		typeID int64,
+	) (pcType models.PcType, err error)
 
 	PcTypes(
 		ctx context.Context,
-		limit int64,
-		offset int64,
-	) (pcTypes []models.PcTypeData, err error)
+		limit int,
+		offset int,
+	) (pcTypes []models.PcType, err error)
 }
 
 type owner interface {
 	SavePcType(
 		ctx context.Context,
-		name string,
-		description string,
-		processor *models.ProcessorData,
-		videoCard *models.VideoCardData,
-		monitor *models.MonitorData,
-		ram *models.RamData,
+		pcType *models.PcType,
+	) (id int64, err error)
+
+	UpdatePcType(
+		ctx context.Context,
+		typeID int64,
+		pcType *models.PcType,
 	) (err error)
 
 	DeletePcType(
 		ctx context.Context,
 		typeId int64,
-	) (err error)
-
-	UpdatePcType(
-		ctx context.Context,
-		typeId int64,
-		name string,
-		description string,
-		processor *models.ProcessorData,
-		videoCard *models.VideoCardData,
-		monitor *models.MonitorData,
-		ram *models.RamData,
 	) (err error)
 }
 

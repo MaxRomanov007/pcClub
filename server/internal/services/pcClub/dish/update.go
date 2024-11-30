@@ -2,24 +2,19 @@ package dish
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) UpdateDish(
 	ctx context.Context,
-	dish models.DishData,
+	dishID int64,
+	dish *models.Dish,
 ) error {
 	const op = "services.pc.Club.dish.UpdateDish"
 
-	if err := s.owner.UpdateDish(ctx, dish); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to update dish: %w", op, err)
+	if err := s.owner.UpdateDish(ctx, dishID, dish); err != nil {
+		return errors2.WithMessage(HandleStorageError(err), op, "failed to update dish in mssql")
 	}
 
 	return nil

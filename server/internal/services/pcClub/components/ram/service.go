@@ -8,33 +8,33 @@ import (
 type provider interface {
 	RamTypes(
 		ctx context.Context,
-	) (producers []models.RamType, err error)
+	) (ramTypes []models.RAMType, err error)
 
 	Rams(
 		ctx context.Context,
-		typeId int64,
-	) (rams []models.Ram, err error)
+		typeID int64,
+	) (rams []models.RAM, err error)
 }
 
 type owner interface {
 	SaveRamType(
 		ctx context.Context,
-		name string,
-	) (err error)
+		ramType *models.RAMType,
+	) (id int64, err error)
 
 	SaveRam(
 		ctx context.Context,
-		ram models.Ram,
-	) (err error)
+		ram *models.RAM,
+	) (id int64, err error)
 
 	DeleteRamType(
 		ctx context.Context,
-		typeId int64,
+		ramTypeID int64,
 	) (err error)
 
 	DeleteRam(
 		ctx context.Context,
-		ramId int64,
+		ramID int64,
 	) (err error)
 }
 
@@ -60,6 +60,10 @@ type Service struct {
 	redisProvider redisProvider
 	redisOwner    redisOwner
 }
+
+const (
+	RedisRamTypesKey = "ram_types"
+)
 
 func New(provider provider, owner owner, redisProvider redisProvider, redisOwner redisOwner) *Service {
 	return &Service{

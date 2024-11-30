@@ -4,15 +4,16 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
 	"server/internal/models"
 	dishService "server/internal/services/pcClub/dish"
 )
 
 type DishesRequest struct {
-	Limit  int64 `get:"limit" validate:"omitempty,min=0"`
-	Offset int64 `get:"offset" validate:"omitempty,min=0"`
+	Limit  int `get:"limit" validate:"omitempty,min=0"`
+	Offset int `get:"offset" validate:"omitempty,min=0"`
 }
 
 type DishRequest struct {
@@ -22,7 +23,7 @@ type DishRequest struct {
 type SaveDishRequest struct {
 	Name        string  `json:"name" validate:"required,max=255"`
 	Calories    int16   `json:"calories" validate:"required,min=0"`
-	Cost        float64 `json:"cost" validate:"required,min=0"`
+	Cost        float32 `json:"cost" validate:"required,min=0"`
 	Description string  `json:"description" validate:"omitempty"`
 }
 
@@ -31,7 +32,7 @@ type UpdateDishRequest struct {
 	StatusId    int64   `json:"status_id" validate:"omitempty,min=1"`
 	Name        string  `json:"name" validate:"omitempty,max=255"`
 	Calories    int16   `json:"calories" validate:"omitempty,min=0"`
-	Cost        float64 `json:"cost" validate:"omitempty,min=0"`
+	Cost        float32 `json:"cost" validate:"omitempty,min=0"`
 	Description string  `json:"description" validate:"omitempty"`
 }
 
@@ -45,8 +46,8 @@ func (a *API) Dishes() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req DishesRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[DishesRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -73,8 +74,8 @@ func (a *API) Dish() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req DishRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[DishRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -101,21 +102,18 @@ func (a *API) SaveDish() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SaveDishRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SaveDishRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
-		}
-
-		if err := a.DishService.SaveDish(r.Context(), models.DishData{
+		dish := models.Dish{
 			Name:        req.Name,
 			Calories:    req.Calories,
 			Cost:        req.Cost,
 			Description: req.Description,
-		}); err != nil {
+		}
+		if _, err := a.DishService.SaveDish(r.Context(), &dish); err != nil {
 			var serviceErr *dishService.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("dish error", sl.Err(serviceErr))
@@ -126,6 +124,8 @@ func (a *API) SaveDish() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, dish)
 	}
 }
 
@@ -135,19 +135,19 @@ func (a *API) UpdateDish() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req UpdateDishRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[UpdateDishRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		if err := a.DishService.UpdateDish(r.Context(), models.DishData{
-			Id:          req.DishId,
-			StatusId:    req.StatusId,
-			Name:        req.Name,
-			Calories:    req.Calories,
-			Cost:        req.Cost,
-			Description: req.Description,
-		}); err != nil {
+		dish := models.Dish{
+			DishStatusID: req.StatusId,
+			Name:         req.Name,
+			Calories:     req.Calories,
+			Cost:         req.Cost,
+			Description:  req.Description,
+		}
+		if err := a.DishService.UpdateDish(r.Context(), req.DishId, &dish); err != nil {
 			var serviceErr *dishService.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("dish error", sl.Err(err))
@@ -158,6 +158,8 @@ func (a *API) UpdateDish() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, dish)
 	}
 }
 
@@ -167,8 +169,8 @@ func (a *API) DeleteDish() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req DeleteDishRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeleteDishRequest](w, r, log)
+		if !ok {
 			return
 		}
 

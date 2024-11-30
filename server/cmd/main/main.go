@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"server/internal/app"
 	"server/internal/config"
-	"server/internal/lib/logger/handlers/slogpretty"
+	"server/internal/lib/api/logger/handlers/slogpretty"
 	"syscall"
 )
 

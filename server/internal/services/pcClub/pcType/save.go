@@ -2,39 +2,20 @@ package pcType
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) SavePcType(
 	ctx context.Context,
-	name string,
-	description string,
-	processor *models.ProcessorData,
-	videoCard *models.VideoCardData,
-	monitor *models.MonitorData,
-	ram *models.RamData,
-) error {
+	pcType *models.PcType,
+) (int64, error) {
 	const op = "services.pcClub.pc.SavePcType"
 
-	err := s.owner.SavePcType(
-		ctx,
-		name,
-		description,
-		processor,
-		videoCard,
-		monitor,
-		ram,
-	)
+	id, err := s.owner.SavePcType(ctx, pcType)
 	if err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, handleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: %w", op, err)
+		return 0, errors2.WithMessage(HandleStorageError(err), op, "failed to save pc type in mssql")
 	}
 
-	return nil
+	return id, nil
 }

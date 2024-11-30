@@ -2,25 +2,20 @@ package dish
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	errors2 "server/internal/lib/errors"
 	"server/internal/models"
-	"server/internal/storage/ssms"
 )
 
 func (s *Service) SaveDish(
 	ctx context.Context,
-	dish models.DishData,
-) error {
+	dish *models.Dish,
+) (int64, error) {
 	const op = "services.pc.Club.dish.SaveDish"
 
-	if err := s.owner.SaveDish(ctx, dish); err != nil {
-		var ssmsErr *ssms.Error
-		if errors.As(err, &ssmsErr) {
-			return fmt.Errorf("%s: %w", op, HandleStorageError(ssmsErr))
-		}
-		return fmt.Errorf("%s: failed to save dish: %w", op, err)
+	id, err := s.owner.SaveDish(ctx, dish)
+	if err != nil {
+		return 0, errors2.WithMessage(HandleStorageError(err), op, "failed to save dish in mssql")
 	}
 
-	return nil
+	return id, nil
 }

@@ -4,8 +4,10 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
+	"server/internal/models"
 	"server/internal/services/pcClub/pc"
 )
 
@@ -42,8 +44,8 @@ func (a *API) Pcs() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req PcsRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[PcsRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -70,23 +72,19 @@ func (a *API) SavePc() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SavePcRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SavePcRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		newPC := models.Pc{
+			PcTypeID:    req.TypeId,
+			PcRoomID:    req.RoomId,
+			Row:         req.Row,
+			Place:       req.Place,
+			Description: req.Description,
 		}
-
-		if err := a.PcService.SavePc(
-			r.Context(),
-			req.TypeId,
-			req.RoomId,
-			req.Row,
-			req.Place,
-			req.Description,
-		); err != nil {
+		if _, err := a.PcService.SavePc(r.Context(), &newPC); err != nil {
 			var pcErr *pc.Error
 			if ok := errors.As(err, &pcErr); ok {
 				log.Warn("pc error", sl.Err(err))
@@ -97,6 +95,8 @@ func (a *API) SavePc() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, newPC)
 	}
 }
 
@@ -106,25 +106,19 @@ func (a *API) UpdatePc() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[UpdatePcRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req UpdatePcRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		newPC := models.Pc{
+			PcTypeID:    req.TypeId,
+			PcRoomID:    req.RoomId,
+			Row:         req.Row,
+			Place:       req.Place,
+			Description: req.Description,
 		}
-
-		if err := a.PcService.UpdatePc(
-			r.Context(),
-			req.PcId,
-			req.TypeId,
-			req.RoomId,
-			req.StatusId,
-			req.Row,
-			req.Place,
-			req.Description,
-		); err != nil {
+		if err := a.PcService.UpdatePc(r.Context(), req.PcId, &newPC); err != nil {
 			var pcErr *pc.Error
 			if ok := errors.As(err, &pcErr); ok {
 				log.Warn("pc error", sl.Err(err))
@@ -136,6 +130,8 @@ func (a *API) UpdatePc() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, newPC)
 	}
 }
 
@@ -145,12 +141,8 @@ func (a *API) DeletePc() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeletePcRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeletePcRequest](w, r, log)
+		if !ok {
 			return
 		}
 

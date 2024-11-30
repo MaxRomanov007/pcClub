@@ -4,8 +4,9 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"net/http"
-	"server/internal/lib/logger/sl"
-	"server/internal/lib/response"
+	"server/internal/lib/api/logger/sl"
+	"server/internal/lib/api/request"
+	"server/internal/lib/api/response"
 	"server/internal/models"
 	pcRoom2 "server/internal/services/pcClub/pcRoom"
 )
@@ -39,8 +40,8 @@ func (a *API) PcRoom() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		var req PcRoomRequest
-		if !a.decodeAndValidateGETRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateGETRequest[PcRoomRequest](w, r, log)
+		if !ok {
 			return
 		}
 
@@ -67,24 +68,18 @@ func (a *API) SavePcRoom() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[SavePcRoomRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req SavePcRoomRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		room := models.PcRoom{
+			Name:        req.Name,
+			Rows:        req.Rows,
+			Places:      req.Places,
+			Description: req.Description,
 		}
-
-		if err := a.PcRoomService.SavePcRoom(
-			r.Context(),
-			models.PcRoom{
-				Name:        req.Name,
-				Rows:        req.Rows,
-				Places:      req.Places,
-				Description: req.Description,
-			},
-		); err != nil {
+		if _, err := a.PcRoomService.SavePcRoom(r.Context(), &room); err != nil {
 			var serviceErr *pcRoom2.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("pc room error", sl.Err(err))
@@ -104,25 +99,18 @@ func (a *API) UpdatePcRoom() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
+		req, ok := request.DecodeAndValidateJSONRequest[UpdatePcRoomRequest](w, r, log)
+		if !ok {
 			return
 		}
 
-		var req UpdatePcRoomRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
-			return
+		room := models.PcRoom{
+			Name:        req.Name,
+			Rows:        req.Rows,
+			Places:      req.Places,
+			Description: req.Description,
 		}
-
-		if err := a.PcRoomService.UpdatePcRoom(
-			r.Context(),
-			models.PcRoom{
-				PcRoomID:    req.RoomId,
-				Name:        req.Name,
-				Rows:        req.Rows,
-				Places:      req.Places,
-				Description: req.Description,
-			},
-		); err != nil {
+		if err := a.PcRoomService.UpdatePcRoom(r.Context(), req.RoomId, &room); err != nil {
 			var serviceErr *pcRoom2.Error
 			if errors.As(err, &serviceErr) {
 				log.Warn("pc room error", sl.Err(err))
@@ -133,6 +121,8 @@ func (a *API) UpdatePcRoom() http.HandlerFunc {
 			response.Internal(w)
 			return
 		}
+
+		render.JSON(w, r, room)
 	}
 }
 
@@ -142,12 +132,8 @@ func (a *API) DeletePcRoom() http.HandlerFunc {
 
 		log := a.log(op, r)
 
-		if !a.authorizeAdmin(w, r, log) {
-			return
-		}
-
-		var req DeletePcRoomRequest
-		if !a.decodeAndValidateJSONRequest(w, r, log, &req) {
+		req, ok := request.DecodeAndValidateJSONRequest[DeletePcRoomRequest](w, r, log)
+		if !ok {
 			return
 		}
 
